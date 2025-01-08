@@ -297,5 +297,3 @@ data
 .DS_Store
 papers
 model/MatchGPT
-model/zeroer
-model/sparkly
