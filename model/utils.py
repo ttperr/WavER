@@ -34,6 +34,7 @@ def get_entity(id, table):
     real_id = int(id[1:])
     return table.iloc[real_id]
 
+
 def save_tables(table_a, table_b, data_dir, train_pairs=None, val_pairs=None, test_pairs=None):
     """
     Save tables and optionally split and save train, validation, and test pairs.
@@ -69,7 +70,7 @@ def save_tables(table_a, table_b, data_dir, train_pairs=None, val_pairs=None, te
         f.write(table_a.read())
     with open(os.path.join(data_dir, "custom_dataset", "2_custom.csv"), "wb") as f:
         f.write(table_b.read())
-    
+
     if train_pairs is not None and val_pairs is None and test_pairs is None:
         pairs_df = pd.read_csv(train_pairs)
         pairs_train, pairs_val_test = train_test_split(pairs_df, test_size=0.3, random_state=42)
@@ -77,11 +78,11 @@ def save_tables(table_a, table_b, data_dir, train_pairs=None, val_pairs=None, te
         pairs_train.to_csv(os.path.join(data_dir, "custom_dataset", "gs_train.csv"), index=False)
         pairs_val.to_csv(os.path.join(data_dir, "custom_dataset", "gs_val.csv"), index=False)
         pairs_test.to_csv(os.path.join(data_dir, "custom_dataset", "gs_test.csv"), index=False)
-    
+
     elif train_pairs is None and val_pairs is None and test_pairs is not None:
         pars_df = pd.read_csv(test_pairs)
         pars_df.to_csv(os.path.join(data_dir, "custom_dataset", "gs_test.csv"), index=False)
-    
+
     elif train_pairs is not None and val_pairs is not None and test_pairs is not None:
         pairs_train = pd.read_csv(train_pairs)
         pairs_val = pd.read_csv(val_pairs)
@@ -93,7 +94,7 @@ def save_tables(table_a, table_b, data_dir, train_pairs=None, val_pairs=None, te
     print('Tables saved successfully')
 
 
-def serialize_entities(entitie1, entitie2=None, remove_col_names=False):
+def serialize_entities(entity1, entity2=None, remove_col_names=False):
     """
     Serializes one or two entities into a single string representation.
 
@@ -103,46 +104,42 @@ def serialize_entities(entitie1, entitie2=None, remove_col_names=False):
 
     Parameters:
     -----------
-    entitie1 : pd.Series
+    entity1 : pd.Series
         The first entity to serialize, represented as a pandas Series.
-    entitie2 : pd.Series, optional
+    entity2 : pd.Series, optional
         The second entity to serialize, represented as a pandas Series. If not provided,
         only the first entity will be serialized. Default is None.
     remove_col_names : bool, optional
         If True, column names will be omitted from the serialized string, leaving only the values.
         If False, both column names and values will be included. Default is False.
 
-    Returns:
-    --------
-    str
-        A serialized string representation of the entity or entities. The format is:
-        '[COL] column1 [VAL] value1 [COL] column2 [VAL] value2 ... [SEP] [COL] column1 [VAL] value1 [COL] column2 [VAL] value2 ...'
-        If remove_col_names is True, the format will be:
-        'value1 value2 ... [SEP] value1 value2 ...'
+    Returns: -------- str A serialized string representation of the entity or entities. The format is: '[COL] column1
+    [VAL] value1 [COL] column2 [VAL] value2 ... [SEP] [COL] column1 [VAL] value1 [COL] column2 [VAL] value2 ...' If
+    remove_col_names is True, the format will be: 'value1 value2 ... [SEP] value1 value2 ...'
 
     Notes:
     ------
     - NaN values in the input Series are replaced with empty strings.
     - If only one entity is provided, the [SEP] token and the second part of the string will be omitted.
     """
-    entity1_nan = entitie1.fillna('')
-    entity2_nan = entitie2.fillna('') if entitie2 is not None else pd.Series()
+    entity1_nan = entity1.fillna('')
+    entity2_nan = entity2.fillna('') if entity2 is not None else pd.Series()
     if remove_col_names:
         e1_string = " ".join([f'{val}' for val in entity1_nan])
-        e2_string = " ".join([f'{val}' for val in entity2_nan]) if entitie2 is not None else ""
+        e2_string = " ".join([f'{val}' for val in entity2_nan]) if entity2 is not None else ""
     else:
         e1_string = " ".join([f'[COL] {col} [VAL] {val}' for col, val in zip(entity1_nan.index, entity1_nan)])
         e2_string = " ".join([f'[COL] {col} [VAL] {val}' for col, val in
-                              zip(entity2_nan.index, entity2_nan)]) if entitie2 is not None else ""
-    return e1_string + ' [SEP] ' + e2_string if entitie2 is not None else e1_string
+                              zip(entity2_nan.index, entity2_nan)]) if entity2 is not None else ""
+    return e1_string + ' [SEP] ' + e2_string if entity2 is not None else e1_string
 
 
 def deserialize_entities(input_string):
     """
     Deserialize a string representation of two entities into two pandas DataFrames.
 
-    The input string is expected to have the following format:
-    '[COL] column1 [VAL] value1 [COL] column2 [VAL] value2 ... [SEP] [COL] column1 [VAL] value1 [COL] column2 [VAL] value2 ...'
+    The input string is expected to have the following format: '[COL] column1 [VAL] value1 [COL] column2 [VAL] value2
+    ... [SEP] [COL] column1 [VAL] value1 [COL] column2 [VAL] value2 ...'
 
     :param input_string: The string representation of the entities.
     :type input_string: str
@@ -178,7 +175,9 @@ def deserialize_entities(input_string):
 
     return e1_df, e2_df
 
-def load_data(data_dir, cols_a_to_rm=None, cols_b_to_rm=None, order_cols=False, remove_col_names=False, custom_dataset=False):
+
+def load_data(data_dir, cols_a_to_rm=None, cols_b_to_rm=None, order_cols=False, remove_col_names=False,
+              custom_dataset=False):
     """
     Load and preprocess data from the specified directory.
     
@@ -203,16 +202,16 @@ def load_data(data_dir, cols_a_to_rm=None, cols_b_to_rm=None, order_cols=False, 
         - X_test (list): Test data pairs.
         - y_test (list): Test data labels.
     """
-    
+
     pairs_train, pairs_val, pairs_test = None, None, None
-    
+
     if 'gs_train.csv' in os.listdir(data_dir):
         pairs_train = pd.read_csv(os.path.join(data_dir, 'gs_train.csv'))
     if 'gs_val.csv' in os.listdir(data_dir):
         pairs_val = pd.read_csv(os.path.join(data_dir, 'gs_val.csv'))
     if 'gs_test.csv' in os.listdir(data_dir):
         pairs_test = pd.read_csv(os.path.join(data_dir, 'gs_test.csv'))
-    
+
     custom_dataset = data_dir.endswith('custom_dataset')
 
     if not custom_dataset:
@@ -293,7 +292,7 @@ def load_data(data_dir, cols_a_to_rm=None, cols_b_to_rm=None, order_cols=False, 
             table_b = table_b[table_a.columns]
         else:
             table_b = table_b.reindex(sorted(table_b.columns, key=lambda x: (table_b[x].map(str).apply(len).max(), x)),
-                                    axis=1)
+                                      axis=1)
         print('Table A columns order after:', table_a.columns.values)
         print('Table B columns order after:', table_b.columns.values)
 
@@ -309,16 +308,16 @@ def load_data(data_dir, cols_a_to_rm=None, cols_b_to_rm=None, order_cols=False, 
     if pairs_train is not None:
         X_train, y_train = [(pairs_train['source_id'].values[i], pairs_train['target_id'].values[i]) for i in
                             range(len(pairs_train))], [1 if pairs_train['matching'].values[i] else 0 for i in
-                                                        range(len(pairs_train))]
+                                                       range(len(pairs_train))]
     if pairs_val is not None:
         X_valid, y_valid = [(pairs_val['source_id'].values[i], pairs_val['target_id'].values[i]) for i in
                             range(len(pairs_val))], [1 if pairs_val['matching'].values[i] else 0 for i in
-                                                        range(len(pairs_val))]
+                                                     range(len(pairs_val))]
     if pairs_test is not None:
         X_test, y_test = [(pairs_test['source_id'].values[i], pairs_test['target_id'].values[i]) for i in
-                            range(len(pairs_test))], [1 if pairs_test['matching'].values[i] else 0 for i in
+                          range(len(pairs_test))], [1 if pairs_test['matching'].values[i] else 0 for i in
                                                     range(len(pairs_test))]
-        
+
     return table_a_serialized, table_b_serialized, X_train, y_train, X_valid, y_valid, X_test, y_test
 
 
@@ -363,7 +362,7 @@ def add_transitive(preds, X_test_pairs):
     return np.array([pair_pred[(e1, e2)] for e1, e2 in X_test_pairs])
 
 
-############################################################ OLD ############################################################
+###################################################### OLD  ######################################################
 
 def split_dataset_with_neg_sampling(pairs, neg_sample_ratio=1, train_ratio=0.7, val_ratio=0.15, seed=None):
     """

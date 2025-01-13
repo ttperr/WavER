@@ -2,6 +2,7 @@ from sentence_transformers import SentenceTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.neighbors import NearestNeighbors
 
+
 def merge_true_matches(X_train_ids, y_train, X_valid_ids, y_valid, X_test_ids, y_test):
     """
     Merges true matches from training, validation, and test datasets.
@@ -34,7 +35,9 @@ def merge_true_matches(X_train_ids, y_train, X_valid_ids, y_valid, X_test_ids, y
             all_true_matches.add((X_test_ids[i][0], X_test_ids[i][1]))
     return all_true_matches
 
-def perform_blocking_sbert(model_name, table_a_serialized, table_b_serialized, n_neighbors=20, metric='cosine', device='cpu'):
+
+def perform_blocking_sbert(model_name, table_a_serialized, table_b_serialized, n_neighbors=20, metric='cosine',
+                           device='cpu'):
     """
     Perform blocking using Sentence-BERT embeddings and k-nearest neighbors.
 
@@ -61,6 +64,7 @@ def perform_blocking_sbert(model_name, table_a_serialized, table_b_serialized, n
 
     return knn.kneighbors(table_a_embeddings, return_distance=False)
 
+
 def get_blocking_metrics(indices, all_true_matches, len_table_a, len_table_b):
     """
     Calculate blocking metrics including reduction ratio, recall, and F1 score.
@@ -83,12 +87,13 @@ def get_blocking_metrics(indices, all_true_matches, len_table_a, len_table_b):
                 s_m += 1
             else:
                 s_n += 1
-    
+
     reduction_ratio = 1 - (s_m + s_n) / (n_m + n_n)
     recall = s_m / n_m
     f1 = 2 * (reduction_ratio * recall) / (reduction_ratio + recall)
 
     return reduction_ratio, recall, f1
+
 
 def perform_blocking_tfidf(table_a_serialized, table_b_serialized, n_neighbors=20, metric='cosine'):
     """
@@ -115,6 +120,7 @@ def perform_blocking_tfidf(table_a_serialized, table_b_serialized, n_neighbors=2
     knn.fit(table_b_tfidf)
     print("k-NN model fitted")
     return knn.kneighbors(table_a_tfidf, return_distance=False)
+
 
 def merge_indices(indices1, indices2):
     """

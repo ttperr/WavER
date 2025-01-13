@@ -23,10 +23,14 @@ WEIGHT_DECAY = 0.01
 THRESHOLD = 0.7
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-NOT_SPLITTED = "Not splitted matches"
-ALREADY_SPLITTED = "Already splitted matches"
-TESTING_PAIRS = "Testing pairs"
-BLOCKED_PAIRS = "Blocked pairs"
+NOT_SPLIT_OPTION = "Not split matches"
+ALREADY_SPLIT_OPTION = "Already split matches"
+TESTING_PAIR_OPTION = "Testing pairs"
+BLOCKED_PAIRS_OPTION = "Blocked pairs"
+BENCHMARK_DATASET_OPTION = "Use a benchmark dataset"
+CUSTOM_DATASET_OPTION = "Use a custom dataset"
+NO_TRUE_MATCHES_OPTION = "I don't have any true matches"
+CUSTOM_DATASET_NAME = "custom_dataset"
 
 ######## Session state ########
 
@@ -87,24 +91,26 @@ st.header("Dataset")
 
 dataset_option = st.radio(
     "Select an option",
-    ["Use a benchmark dataset", "Use a custom dataset"]
+    [BENCHMARK_DATASET_OPTION, CUSTOM_DATASET_OPTION]
 )
 
-if dataset_option == "Use a benchmark dataset":
+if dataset_option == BENCHMARK_DATASET_OPTION:
     dataset_name = st.selectbox(
         "Select the dataset",
         import_data.DATASET_SUFFIX.keys(), index=2
     )
 
     st.session_state.dataset_name = dataset_name
-    st.session_state.known_pairs = any(file.startswith("gs_") for file in os.listdir(os.path.join(DATA_FOLDER, dataset_name)))
+    st.session_state.known_pairs = any(
+        file.startswith("gs_") for file in os.listdir(os.path.join(DATA_FOLDER, dataset_name)))
 
     if st.button("Download dataset"):
         downloaded = import_data.download_dataset(dataset_name)
         if downloaded:
             st.write("Dataset downloaded successfully")
         else:
-            st.write("Dataset already exists, skipping download. If you want to re-download, please delete the folder first.")
+            st.write(
+                "Dataset already exists, skipping download. If you want to re-download, please delete the folder first.")
 else:
     tableA = st.file_uploader("Upload the table A (format: subject_id, col1, col2,..)", type=['csv'])
     tableB = st.file_uploader("Upload the table B (format: subject_id, col1, col2,..)", type=['csv'])
@@ -114,36 +120,38 @@ else:
     if st.session_state.supervised:
         splitted_pairs = st.selectbox(
             "Select the format of the your true matches",
-            [NOT_SPLITTED, ALREADY_SPLITTED]
+            [NOT_SPLIT_OPTION, ALREADY_SPLIT_OPTION]
         )
 
-        if splitted_pairs == NOT_SPLITTED:
+        if splitted_pairs == NOT_SPLIT_OPTION:
             train_pairs = st.file_uploader("Upload the train pairs (format: idA, idB)", type=['csv'])
-        elif splitted_pairs == ALREADY_SPLITTED:
+        elif splitted_pairs == ALREADY_SPLIT_OPTION:
             train_pairs = st.file_uploader("Upload the train pairs (format: idA, idB)", type=['csv'])
             val_pairs = st.file_uploader("Upload the validation pairs (format: idA, idB)", type=['csv'])
             test_pairs = st.file_uploader("Upload the test pairs (format: idA, idB)", type=['csv'])
     else:
         splitted_pairs = st.selectbox(
             "Select the format of the your true matches",
-            [TESTING_PAIRS, "I don't have any true matches"]
+            [TESTING_PAIR_OPTION, NO_TRUE_MATCHES_OPTION]
         )
 
-        if splitted_pairs == TESTING_PAIRS:
+        if splitted_pairs == TESTING_PAIR_OPTION:
             test_pairs = st.file_uploader("Upload the test pairs (format: idA, idB)", type=['csv'])
 
-    st.session_state.dataset_name = "custom_dataset"
-    st.session_state.known_pairs = any(file.startswith("gs_") for file in os.listdir(os.path.join(DATA_FOLDER, st.session_state.dataset_name)))
+    st.session_state.dataset_name = CUSTOM_DATASET_NAME
+    st.session_state.known_pairs = any(
+        file.startswith("gs_") for file in os.listdir(os.path.join(DATA_FOLDER, st.session_state.dataset_name)))
 
     if st.button("Upload dataset"):
-        if (not train_pairs or not val_pairs or not test_pairs) and splitted_pairs == ALREADY_SPLITTED:
+        if (not train_pairs or not val_pairs or not test_pairs) and splitted_pairs == ALREADY_SPLIT_OPTION:
             st.warning("Please upload all pairs")
-        elif not train_pairs and splitted_pairs == NOT_SPLITTED:
+        elif not train_pairs and splitted_pairs == NOT_SPLIT_OPTION:
             st.warning("Please upload the train pairs")
-        elif not test_pairs and splitted_pairs == TESTING_PAIRS:
+        elif not test_pairs and splitted_pairs == TESTING_PAIR_OPTION:
             st.warning("Please upload the test pairs")
         elif tableA is not None and tableB is not None:
-            save_tables(tableA, tableB, DATA_FOLDER, train_pairs=train_pairs, val_pairs=val_pairs, test_pairs=test_pairs)
+            save_tables(tableA, tableB, DATA_FOLDER, train_pairs=train_pairs, val_pairs=val_pairs,
+                        test_pairs=test_pairs)
             st.write("Dataset uploaded successfully")
         else:
             st.warning("Please upload both tables")
@@ -155,10 +163,10 @@ st.subheader("Blocking")
 
 pair_used = st.radio(
     "Select the pairs to use",
-    [ "Already included pairs", BLOCKED_PAIRS] if st.session_state.known_pairs else [BLOCKED_PAIRS]
+    ["Already included pairs", BLOCKED_PAIRS_OPTION] if st.session_state.known_pairs else [BLOCKED_PAIRS_OPTION]
 )
 
-if pair_used == BLOCKED_PAIRS:
+if pair_used == BLOCKED_PAIRS_OPTION:
     blocking = st.selectbox(
         "Select the blocking KNN method to use",
         [
@@ -183,24 +191,31 @@ if pair_used == BLOCKED_PAIRS:
     if st.button("Run blocking"):
         with st.status("Blocking..."):
             st.write("Blocking started")
-            
-            table_a_serialized, table_b_serialized, X_train_ids, y_train, X_valid_ids, y_valid, X_test_ids, y_test = load_data(os.path.join(DATA_FOLDER, st.session_state.dataset_name), remove_col_names=remove_col_name, order_cols=order_cols)
-            
+
+            table_a_serialized, table_b_serialized, X_train_ids, y_train, X_valid_ids, y_valid, X_test_ids, y_test = load_data(
+                os.path.join(DATA_FOLDER, st.session_state.dataset_name), remove_col_names=remove_col_name,
+                order_cols=order_cols)
+
             all_true_matches = merge_true_matches(X_train_ids, y_train, X_valid_ids, y_valid, X_test_ids, y_test)
-            
+
             st.write("True matches merged")
             st.write("Starting blocking")
-            
-            blocked_pairs = perform_blocking_sbert(blocking, table_a_serialized, table_b_serialized, n_neighbors=n_neighbors, metric='cosine', device=device)
+
+            blocked_pairs = perform_blocking_sbert(blocking, table_a_serialized, table_b_serialized,
+                                                   n_neighbors=n_neighbors, metric='cosine', device=device)
             if merge_with_tfidf:
-                blocked_pairs = merge_indices(blocked_pairs, perform_blocking_tfidf(table_a_serialized, table_b_serialized, n_neighbors=n_neighbors, metric='cosine'))
+                blocked_pairs = merge_indices(blocked_pairs,
+                                              perform_blocking_tfidf(table_a_serialized, table_b_serialized,
+                                                                     n_neighbors=n_neighbors, metric='cosine'))
                 st.write("Merged with TF-IDF")
-            
+
             st.write("Blocking done")
-            
+
             st.session_state.blocked_pairs = blocked_pairs
-            
-            reduction_ratio, recall, f1 = get_blocking_metrics(blocked_pairs, all_true_matches, len(table_a_serialized), len(table_b_serialized)) if len(all_true_matches) > 0 else (None, None, None)
+
+            reduction_ratio, recall, f1 = get_blocking_metrics(blocked_pairs, all_true_matches, len(table_a_serialized),
+                                                               len(table_b_serialized)) if len(
+                all_true_matches) > 0 else (None, None, None)
 
             st.session_state.blocking_metrics["reduction_ratio"] = reduction_ratio
             st.session_state.blocking_metrics["recall"] = recall
@@ -242,17 +257,21 @@ if st.session_state.supervised:
     if st.button("Run matching"):
         with st.status("Matching in progress..."):
             st.write("Matching started")
-            
-            train_loader, valid_set, y_valid, test_set, y_test = prepare_data_cross_encoder(os.path.join(DATA_FOLDER, st.session_state.dataset_name), remove_col_names=remove_col_name, order_cols=order_cols, blocked_pairs=st.session_state.blocked_pairs)
-            
+
+            train_loader, valid_set, y_valid, test_set, y_test = prepare_data_cross_encoder(
+                os.path.join(DATA_FOLDER, st.session_state.dataset_name), remove_col_names=remove_col_name,
+                order_cols=order_cols, blocked_pairs=st.session_state.blocked_pairs)
+
             st.write("Data prepared")
-            
-            logits, train_time = fit_cross_encoder(model_name, train_loader, valid_set, y_valid, test_set, epochs=EPOCHS, learning_rate=LEARNING_RATE, weight_decay=WEIGHT_DECAY, device=device)
-            
+
+            logits, train_time = fit_cross_encoder(model_name, train_loader, valid_set, y_valid, test_set,
+                                                   epochs=EPOCHS, learning_rate=LEARNING_RATE,
+                                                   weight_decay=WEIGHT_DECAY, device=device)
+
             st.write("Model fitted")
-            
+
             accuracy, precision, recall, f1, roc_auc = evaluate_cross_encoder(logits, y_test, threshold=THRESHOLD)
-            
+
             st.write("Matching done")
 
             st.session_state.cross_encoder_metrics["accuracy"] = accuracy
@@ -260,7 +279,6 @@ if st.session_state.supervised:
             st.session_state.cross_encoder_metrics["recall"] = recall
             st.session_state.cross_encoder_metrics["f1"] = f1
             st.session_state.cross_encoder_metrics["roc_auc"] = roc_auc
-
 
         if st.session_state.cross_encoder_metrics["accuracy"] is not None:
             # Print an example of the predictions
@@ -283,7 +301,6 @@ if st.session_state.supervised:
                 if count_1 == 1 and count_0 == 1:
                     break
 
-
     # Display metrics from session state
     if st.session_state.cross_encoder_metrics["accuracy"] is not None:
         st.write(f"Accuracy: {st.session_state.cross_encoder_metrics['accuracy']}")
@@ -299,7 +316,7 @@ else:
         ['ZeroShot Embedding', 'LLM Inference'],
         index=0
     )
-    
+
     model_name_zero_shot = st.selectbox(
         "Select the model to use",
         [
@@ -314,20 +331,24 @@ else:
         if unsupervised_method == 'ZeroShot Embedding':
 
             with st.status("Matching in progress..."):
-                table_a_serialized, table_b_serialized, X_train_ids, y_train, X_valid_ids, y_valid, X_test_ids, y_test = load_data(os.path.join(DATA_FOLDER, st.session_state.dataset_name), remove_col_names=remove_col_name, order_cols=order_cols)
+                table_a_serialized, table_b_serialized, X_train_ids, y_train, X_valid_ids, y_valid, X_test_ids, y_test = load_data(
+                    os.path.join(DATA_FOLDER, st.session_state.dataset_name), remove_col_names=remove_col_name,
+                    order_cols=order_cols)
                 similarity_matrix_test = None
                 X1_test, X2_test = None, None
-                
+
                 if st.session_state.known_pairs:
-                    X1_test, X2_test = [table_a_serialized[i[0]] for i in X_test_ids], [table_b_serialized[i[1]] for i in X_test_ids]
+                    X1_test, X2_test = [table_a_serialized[i[0]] for i in X_test_ids], [table_b_serialized[i[1]] for i
+                                                                                        in X_test_ids]
 
                 elif st.session_state.blocked_pairs is not None:
                     all_matches = []
                     for i in range(len(table_a_serialized)):
                         for j in blocked_pairs[i]:
                             all_matches.append((i, j))
-                    
-                    X1_test, X2_test = [table_a_serialized[i[0]] for i in all_matches], [table_b_serialized[i[1]] for i in all_matches]
+
+                    X1_test, X2_test = [table_a_serialized[i[0]] for i in all_matches], [table_b_serialized[i[1]] for i
+                                                                                         in all_matches]
 
                 else:
                     st.write("Please run the blocking first")
@@ -341,11 +362,12 @@ else:
                 st.write("Embeddings done")
 
                 similarity_matrix_test = cosine_similarity(embeddings1_test, embeddings2_test)
-                
+
                 st.write("Similarity matrix done")
 
                 if similarity_matrix_test is not None:
-                    accuracy, precision, recall, f1, roc_auc = evaluate_zero_shot(similarity_matrix_test, y_test, threshold=THRESHOLD)
+                    accuracy, precision, recall, f1, roc_auc = evaluate_zero_shot(similarity_matrix_test, y_test,
+                                                                                  threshold=THRESHOLD)
 
                     st.session_state.unsupervised_metrics["accuracy"] = accuracy
                     st.session_state.unsupervised_metrics["precision"] = precision
