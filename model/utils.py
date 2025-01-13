@@ -34,21 +34,62 @@ def get_entity(id, table):
     real_id = int(id[1:])
     return table.iloc[real_id]
 
-def save_tables(table_a, table_b, data_dir, pairs=None):
+def save_tables(table_a, table_b, data_dir, train_pairs=None, val_pairs=None, test_pairs=None):
+    """
+    Save tables and optionally split and save train, validation, and test pairs.
+    
+    Parameters
+    ----------
+    table_a : file-like
+        The first table to save.
+    table_b : file-like
+        The second table to save.
+    data_dir : str
+        The directory where the tables and pairs will be saved.
+    train_pairs : file-like, optional
+        The training pairs.
+    val_pairs : file-like, optional
+        The validation pairs.
+    test_pairs : file-like, optional
+        The test pairs.
+
+    Returns
+    -------
+
+    The function saves `table_a` and `table_b` as "1_custom.csv" and "2_custom.csv" respectively
+    in a subdirectory named "custom_dataset" within `data_dir`. If `train_pairs` is provided and
+    `val_pairs` and `test_pairs` are not provided, it splits the training pairs into training,
+    validation, and test sets and saves them as "gs_train.csv", "gs_val.csv", and "gs_test.csv".
+    If only `test_pairs` is provided, it saves it as "gs_test.csv". If all three pairs are provided,
+    it saves them directly as "gs_train.csv", "gs_val.csv", and "gs_test.csv".
+    """
     if not os.path.exists(os.path.join(data_dir, "custom_dataset")):
         os.makedirs(os.path.join(data_dir, "custom_dataset"))
     with open(os.path.join(data_dir, "custom_dataset", "1_custom.csv"), "wb") as f:
         f.write(table_a.read())
     with open(os.path.join(data_dir, "custom_dataset", "2_custom.csv"), "wb") as f:
         f.write(table_b.read())
-    if pairs:
-        # Train, val and test split of the pairs
-        pairs_df = pd.read_csv(pairs)
+    
+    if train_pairs is not None and val_pairs is None and test_pairs is None:
+        pairs_df = pd.read_csv(train_pairs)
         pairs_train, pairs_val_test = train_test_split(pairs_df, test_size=0.3, random_state=42)
         pairs_val, pairs_test = train_test_split(pairs_val_test, test_size=0.5, random_state=42)
         pairs_train.to_csv(os.path.join(data_dir, "custom_dataset", "gs_train.csv"), index=False)
         pairs_val.to_csv(os.path.join(data_dir, "custom_dataset", "gs_val.csv"), index=False)
         pairs_test.to_csv(os.path.join(data_dir, "custom_dataset", "gs_test.csv"), index=False)
+    
+    elif train_pairs is None and val_pairs is None and test_pairs is not None:
+        pars_df = pd.read_csv(test_pairs)
+        pars_df.to_csv(os.path.join(data_dir, "custom_dataset", "gs_test.csv"), index=False)
+    
+    elif train_pairs is not None and val_pairs is not None and test_pairs is not None:
+        pairs_train = pd.read_csv(train_pairs)
+        pairs_val = pd.read_csv(val_pairs)
+        pairs_test = pd.read_csv(test_pairs)
+        pairs_train.to_csv(os.path.join(data_dir, "custom_dataset", "gs_train.csv"), index=False)
+        pairs_val.to_csv(os.path.join(data_dir, "custom_dataset", "gs_val.csv"), index=False)
+        pairs_test.to_csv(os.path.join(data_dir, "custom_dataset", "gs_test.csv"), index=False)
+
     print('Tables saved successfully')
 
 
@@ -138,11 +179,42 @@ def deserialize_entities(input_string):
     return e1_df, e2_df
 
 def load_data(data_dir, cols_a_to_rm=None, cols_b_to_rm=None, order_cols=False, remove_col_names=False, custom_dataset=False):
+    """
+    Load and preprocess data from the specified directory.
+    
+    Parameters:
+    ----------
+    data_dir (str): Directory containing the data files.
+    cols_a_to_rm (list, optional): List of columns to remove from table A. Defaults to None.
+    cols_b_to_rm (list, optional): List of columns to remove from table B. Defaults to None.
+    order_cols (bool, optional): Whether to reorder columns based on the length of their values. Defaults to False.
+    remove_col_names (bool, optional): Whether to remove column names during serialization. Defaults to False.
+    custom_dataset (bool, optional): Whether to use custom dataset files. Defaults to False.
+    
+    Returns:
+    --------
+    tuple: A tuple containing:
+        - table_a_serialized (list): Serialized entities from table A.
+        - table_b_serialized (list): Serialized entities from table B.
+        - X_train (list): Training data pairs.
+        - y_train (list): Training data labels.
+        - X_valid (list): Validation data pairs.
+        - y_valid (list): Validation data labels.
+        - X_test (list): Test data pairs.
+        - y_test (list): Test data labels.
+    """
+    
     pairs_train, pairs_val, pairs_test = None, None, None
+    
     if 'gs_train.csv' in os.listdir(data_dir):
         pairs_train = pd.read_csv(os.path.join(data_dir, 'gs_train.csv'))
+    if 'gs_val.csv' in os.listdir(data_dir):
         pairs_val = pd.read_csv(os.path.join(data_dir, 'gs_val.csv'))
+    if 'gs_test.csv' in os.listdir(data_dir):
         pairs_test = pd.read_csv(os.path.join(data_dir, 'gs_test.csv'))
+    
+    custom_dataset = data_dir.endswith('custom_dataset')
+
     if not custom_dataset:
         if len([file for file in os.listdir(data_dir) if file.endswith('.csv')]) == 4:
             # Then set 1 is the only file that do not start with gs
@@ -175,11 +247,12 @@ def load_data(data_dir, cols_a_to_rm=None, cols_b_to_rm=None, order_cols=False, 
     idB_to_index = dict(zip(table_b['target_id'], table_b.index))
 
     if pairs_train is not None:
-        # Replace idA and idB in pairs with their corresponding indices
         pairs_train['source_id'] = pairs_train['source_id'].map(idA_to_index)
         pairs_train['target_id'] = pairs_train['target_id'].map(idB_to_index)
+    if pairs_val is not None:
         pairs_val['source_id'] = pairs_val['source_id'].map(idA_to_index)
         pairs_val['target_id'] = pairs_val['target_id'].map(idB_to_index)
+    if pairs_test is not None:
         pairs_test['source_id'] = pairs_test['source_id'].map(idA_to_index)
         pairs_test['target_id'] = pairs_test['target_id'].map(idB_to_index)
 
@@ -231,20 +304,22 @@ def load_data(data_dir, cols_a_to_rm=None, cols_b_to_rm=None, order_cols=False, 
 
     print('Serialized entities', '\n')
 
+    X_train, y_train, X_valid, y_valid, X_test, y_test = [], [], [], [], [], []
+
     if pairs_train is not None:
         X_train, y_train = [(pairs_train['source_id'].values[i], pairs_train['target_id'].values[i]) for i in
                             range(len(pairs_train))], [1 if pairs_train['matching'].values[i] else 0 for i in
                                                         range(len(pairs_train))]
+    if pairs_val is not None:
         X_valid, y_valid = [(pairs_val['source_id'].values[i], pairs_val['target_id'].values[i]) for i in
                             range(len(pairs_val))], [1 if pairs_val['matching'].values[i] else 0 for i in
                                                         range(len(pairs_val))]
+    if pairs_test is not None:
         X_test, y_test = [(pairs_test['source_id'].values[i], pairs_test['target_id'].values[i]) for i in
                             range(len(pairs_test))], [1 if pairs_test['matching'].values[i] else 0 for i in
                                                     range(len(pairs_test))]
         
-        return table_a_serialized, table_b_serialized, X_train, y_train, X_valid, y_valid, X_test, y_test
-    else:
-        return table_a_serialized, table_b_serialized, None, None, None, None, None, None
+    return table_a_serialized, table_b_serialized, X_train, y_train, X_valid, y_valid, X_test, y_test
 
 
 def add_transitive(preds, X_test_pairs):
@@ -286,6 +361,9 @@ def add_transitive(preds, X_test_pairs):
 
     # Convert the dictionary back to a list of predictions
     return np.array([pair_pred[(e1, e2)] for e1, e2 in X_test_pairs])
+
+
+############################################################ OLD ############################################################
 
 def split_dataset_with_neg_sampling(pairs, neg_sample_ratio=1, train_ratio=0.7, val_ratio=0.15, seed=None):
     """

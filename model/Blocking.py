@@ -1,9 +1,6 @@
-import matplotlib.pyplot as plt
-import numpy as np
 from sentence_transformers import SentenceTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.neighbors import NearestNeighbors
-from tqdm.notebook import tqdm, trange
 
 def merge_true_matches(X_train_ids, y_train, X_valid_ids, y_valid, X_test_ids, y_test):
     """
