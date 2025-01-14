@@ -50,7 +50,7 @@ def prepare_data_cross_encoder(data_dir, remove_col_names=True, order_cols=True,
     test_set = [(e1, e2) for e1, e2 in zip(X1_test, X2_test)]
     valid_set = [(e1, e2) for e1, e2 in zip(X1_valid, X2_valid)]
 
-    return train_loader, valid_set, y_valid, test_set, y_test
+    return train_loader, valid_set, y_valid, test_set, X_test_ids, y_test
 
 
 def fit_cross_encoder(model_name, train_loader, valid_set, y_valid, test_set, epochs=1, learning_rate=2e-5,

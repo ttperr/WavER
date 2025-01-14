@@ -1,5 +1,6 @@
 import os
 
+import pandas as pd
 import streamlit as st
 import torch
 from sentence_transformers import SentenceTransformer
@@ -17,6 +18,7 @@ from model.ZeroShot import evaluate_zero_shot
 ######## Constants ########
 
 DATA_FOLDER = import_data.DATA_FOLDER
+RESULTS_FOLDER = "results"
 EPOCHS = 1
 LEARNING_RATE = 2e-5
 WEIGHT_DECAY = 0.01
@@ -46,6 +48,12 @@ if 'known_pairs' not in st.session_state:
 if 'testing' not in st.session_state:
     st.session_state.testing = False
 
+if 'blocked_pairs' not in st.session_state:
+    st.session_state.blocked_pairs = None
+
+if 'output' not in st.session_state:
+    st.session_state.output = None
+
 if "blocking_metrics" not in st.session_state:
     st.session_state.blocking_metrics = {
         "reduction_ratio": None,
@@ -53,28 +61,30 @@ if "blocking_metrics" not in st.session_state:
         "f1": None
     }
 
-if 'blocked_pairs' not in st.session_state:
-    st.session_state.blocked_pairs = None
+# if 'cross_encoder_metrics' not in st.session_state:
+#     st.session_state.cross_encoder_metrics = {
+#         "accuracy": None,
+#         "precision": None,
+#         "recall": None,
+#         "f1": None,
+#         "roc_auc": None
+#     }
 
-if 'cross_encoder_metrics' not in st.session_state:
-    st.session_state.cross_encoder_metrics = {
-        "accuracy": None,
-        "precision": None,
-        "recall": None,
-        "f1": None,
-        "roc_auc": None
-    }
-
-if 'unsupervied_metrics' not in st.session_state:
-    st.session_state.unsupervised_metrics = {
-        "accuracy": None,
-        "precision": None,
-        "recall": None,
-        "f1": None,
-        "roc_auc": None
-    }
+# if 'unsupervied_metrics' not in st.session_state:
+#     st.session_state.unsupervised_metrics = {
+#         "accuracy": None,
+#         "precision": None,
+#         "recall": None,
+#         "f1": None,
+#         "roc_auc": None
+#     }
 
 ######## Streamlit app ########
+
+st.set_page_config(
+    page_title="WavER Matching",
+    page_icon="🔀",
+)
 
 st.title("WavER - Entity Resolution Project")
 st.write("Tristan PERROT degree project for KTH @ Wavestone")
@@ -107,9 +117,9 @@ if dataset_option == BENCHMARK_DATASET_OPTION:
     if st.button("Download dataset"):
         downloaded = import_data.download_dataset(dataset_name)
         if downloaded:
-            st.write("Dataset downloaded successfully")
+            st.success("Dataset downloaded successfully")
         else:
-            st.write(
+            st.error(
                 "Dataset already exists, skipping download. If you want to re-download, please delete the folder first.")
 else:
     tableA = st.file_uploader("Upload the table A (format: subject_id, col1, col2,..)", type=['csv'])
@@ -152,7 +162,7 @@ else:
         elif tableA is not None and tableB is not None:
             save_tables(tableA, tableB, DATA_FOLDER, train_pairs=train_pairs, val_pairs=val_pairs,
                         test_pairs=test_pairs)
-            st.write("Dataset uploaded successfully")
+            st.success("Dataset uploaded successfully")
         else:
             st.warning("Please upload both tables")
 
@@ -258,7 +268,7 @@ if st.session_state.supervised:
         with st.status("Matching in progress..."):
             st.write("Matching started")
 
-            train_loader, valid_set, y_valid, test_set, y_test = prepare_data_cross_encoder(
+            train_loader, valid_set, y_valid, test_set, X_test_ids, y_test = prepare_data_cross_encoder(
                 os.path.join(DATA_FOLDER, st.session_state.dataset_name), remove_col_names=remove_col_name,
                 order_cols=order_cols, blocked_pairs=st.session_state.blocked_pairs)
 
@@ -267,50 +277,52 @@ if st.session_state.supervised:
             logits, train_time = fit_cross_encoder(model_name, train_loader, valid_set, y_valid, test_set,
                                                    epochs=EPOCHS, learning_rate=LEARNING_RATE,
                                                    weight_decay=WEIGHT_DECAY, device=device)
+            
+            output = [(X_test_ids[i][0], X_test_ids[i][1], logits[i]) for i in range(len(X_test_ids))]
+            st.session_state.output = output
 
             st.write("Model fitted")
 
-            accuracy, precision, recall, f1, roc_auc = evaluate_cross_encoder(logits, y_test, threshold=THRESHOLD)
+    #         accuracy, precision, recall, f1, roc_auc = evaluate_cross_encoder(logits, y_test, threshold=THRESHOLD)
 
-            st.write("Matching done")
+    #         st.write("Matching done")
 
-            st.session_state.cross_encoder_metrics["accuracy"] = accuracy
-            st.session_state.cross_encoder_metrics["precision"] = precision
-            st.session_state.cross_encoder_metrics["recall"] = recall
-            st.session_state.cross_encoder_metrics["f1"] = f1
-            st.session_state.cross_encoder_metrics["roc_auc"] = roc_auc
+    #         st.session_state.cross_encoder_metrics["accuracy"] = accuracy
+    #         st.session_state.cross_encoder_metrics["precision"] = precision
+    #         st.session_state.cross_encoder_metrics["recall"] = recall
+    #         st.session_state.cross_encoder_metrics["f1"] = f1
+    #         st.session_state.cross_encoder_metrics["roc_auc"] = roc_auc
 
-        if st.session_state.cross_encoder_metrics["accuracy"] is not None:
-            # Print an example of the predictions
-            # Check the first 1 prediction and first 0 prediction
-            st.write("Example of predictions")
-            count_1, count_0 = 0, 0
-            for i in range(len(test_set)):
-                if y_test[i] == 1 and count_1 < 1:
-                    st.write(f"Prediction: {logits[i]} - True value: {y_test[i]}")
-                    st.write("Example of prediction 1:")
-                    st.write(f"Entity A: {test_set[i][0]}")
-                    st.write(f"Entity B: {test_set[i][1]}")
-                    count_1 += 1
-                elif y_test[i] == 0 and count_0 < 1:
-                    st.write(f"Prediction: {logits[i]} - True value: {y_test[i]}")
-                    st.write("Example of prediction 0:")
-                    st.write(f"Entity A: {test_set[i][0]}")
-                    st.write(f"Entity B: {test_set[i][1]}")
-                    count_0 += 1
-                if count_1 == 1 and count_0 == 1:
-                    break
+    #     if st.session_state.cross_encoder_metrics["accuracy"] is not None:
+    #         # Print an example of the predictions
+    #         # Check the first 1 prediction and first 0 prediction
+    #         st.write("Example of predictions")
+    #         count_1, count_0 = 0, 0
+    #         for i in range(len(test_set)):
+    #             if y_test[i] == 1 and count_1 < 1:
+    #                 st.write(f"Prediction: {logits[i]} - True value: {y_test[i]}")
+    #                 st.write("Example of prediction 1:")
+    #                 st.write(f"Entity A: {test_set[i][0]}")
+    #                 st.write(f"Entity B: {test_set[i][1]}")
+    #                 count_1 += 1
+    #             elif y_test[i] == 0 and count_0 < 1:
+    #                 st.write(f"Prediction: {logits[i]} - True value: {y_test[i]}")
+    #                 st.write("Example of prediction 0:")
+    #                 st.write(f"Entity A: {test_set[i][0]}")
+    #                 st.write(f"Entity B: {test_set[i][1]}")
+    #                 count_0 += 1
+    #             if count_1 == 1 and count_0 == 1:
+    #                 break
 
-    # Display metrics from session state
-    if st.session_state.cross_encoder_metrics["accuracy"] is not None:
-        st.write(f"Accuracy: {st.session_state.cross_encoder_metrics['accuracy']}")
-        st.write(f"Precision: {st.session_state.cross_encoder_metrics['precision']}")
-        st.write(f"Recall: {st.session_state.cross_encoder_metrics['recall']}")
-        st.write(f"F1 score: {st.session_state.cross_encoder_metrics['f1']}")
-        st.write(f"ROC AUC: {st.session_state.cross_encoder_metrics['roc_auc']}")
+    # # Display metrics from session state
+    # if st.session_state.cross_encoder_metrics["accuracy"] is not None:
+    #     st.write(f"Accuracy: {st.session_state.cross_encoder_metrics['accuracy']}")
+    #     st.write(f"Precision: {st.session_state.cross_encoder_metrics['precision']}")
+    #     st.write(f"Recall: {st.session_state.cross_encoder_metrics['recall']}")
+    #     st.write(f"F1 score: {st.session_state.cross_encoder_metrics['f1']}")
+    #     st.write(f"ROC AUC: {st.session_state.cross_encoder_metrics['roc_auc']}")
 
 else:
-    # Unsupervised
     unsupervised_method = st.selectbox(
         "Select the unsupervised method to use",
         ['ZeroShot Embedding', 'LLM Inference'],
@@ -331,24 +343,25 @@ else:
         if unsupervised_method == 'ZeroShot Embedding':
 
             with st.status("Matching in progress..."):
+                similarity_matrix_test = None
+                X1_test, X2_test = None, None
+
                 table_a_serialized, table_b_serialized, X_train_ids, y_train, X_valid_ids, y_valid, X_test_ids, y_test = load_data(
                     os.path.join(DATA_FOLDER, st.session_state.dataset_name), remove_col_names=remove_col_name,
                     order_cols=order_cols)
-                similarity_matrix_test = None
-                X1_test, X2_test = None, None
 
                 if st.session_state.known_pairs:
                     X1_test, X2_test = [table_a_serialized[i[0]] for i in X_test_ids], [table_b_serialized[i[1]] for i
                                                                                         in X_test_ids]
 
                 elif st.session_state.blocked_pairs is not None:
-                    all_matches = []
+                    X_test_ids = []
                     for i in range(len(table_a_serialized)):
                         for j in blocked_pairs[i]:
-                            all_matches.append((i, j))
+                            X_test_ids.append((i, j))
 
-                    X1_test, X2_test = [table_a_serialized[i[0]] for i in all_matches], [table_b_serialized[i[1]] for i
-                                                                                         in all_matches]
+                    X1_test, X2_test = [table_a_serialized[i[0]] for i in X_test_ids], [table_b_serialized[i[1]] for i
+                                                                                         in X_test_ids]
 
                 else:
                     st.write("Please run the blocking first")
@@ -368,12 +381,15 @@ else:
                 if similarity_matrix_test is not None:
                     accuracy, precision, recall, f1, roc_auc = evaluate_zero_shot(similarity_matrix_test, y_test,
                                                                                   threshold=THRESHOLD)
+                    
+                    output = [(X_test_ids[i][0], X_test_ids[i][1], similarity_matrix_test[i, i]) for i in range(len(X_test_ids))]
+                    st.session_state.output = output
 
-                    st.session_state.unsupervised_metrics["accuracy"] = accuracy
-                    st.session_state.unsupervised_metrics["precision"] = precision
-                    st.session_state.unsupervised_metrics["recall"] = recall
-                    st.session_state.unsupervised_metrics["f1"] = f1
-                    st.session_state.unsupervised_metrics["roc_auc"] = roc_auc
+                    # st.session_state.unsupervised_metrics["accuracy"] = accuracy
+                    # st.session_state.unsupervised_metrics["precision"] = precision
+                    # st.session_state.unsupervised_metrics["recall"] = recall
+                    # st.session_state.unsupervised_metrics["f1"] = f1
+                    # st.session_state.unsupervised_metrics["roc_auc"] = roc_auc
 
                 st.write("Matching done")
 
@@ -382,11 +398,28 @@ else:
             pass
 
     # Display metrics from session state
-    if st.session_state.unsupervised_metrics["accuracy"] is not None:
-        st.write(f"Accuracy: {st.session_state.unsupervised_metrics['accuracy']}")
-        st.write(f"Precision: {st.session_state.unsupervised_metrics['precision']}")
-        st.write(f"Recall: {st.session_state.unsupervised_metrics['recall']}")
-        st.write(f"F1 score: {st.session_state.unsupervised_metrics['f1']}")
-        st.write(f"ROC AUC: {st.session_state.unsupervised_metrics['roc_auc']}")
+    # if st.session_state.unsupervised_metrics["accuracy"] is not None:
+    #     st.write(f"Accuracy: {st.session_state.unsupervised_metrics['accuracy']}")
+    #     st.write(f"Precision: {st.session_state.unsupervised_metrics['precision']}")
+    #     st.write(f"Recall: {st.session_state.unsupervised_metrics['recall']}")
+    #     st.write(f"F1 score: {st.session_state.unsupervised_metrics['f1']}")
+    #     st.write(f"ROC AUC: {st.session_state.unsupervised_metrics['roc_auc']}")
 
 ######## Evaluation ########
+
+st.header("Result export")
+if st.session_state.output:
+    output_df = pd.DataFrame(st.session_state.output, columns=['Entity A', 'Entity B', 'Score'])
+
+    # Convert DataFrame to CSV
+    csv_data = output_df.to_csv(index=False)
+
+    # Provide download button
+    st.download_button(
+        label="Download results as CSV",
+        data=csv_data,
+        file_name="results.csv",
+        mime="text/csv",
+    )
+else:
+    st.warning("No results to download. Please run the matching process first.")

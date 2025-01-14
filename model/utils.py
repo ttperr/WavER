@@ -176,8 +176,7 @@ def deserialize_entities(input_string):
     return e1_df, e2_df
 
 
-def load_data(data_dir, cols_a_to_rm=None, cols_b_to_rm=None, order_cols=False, remove_col_names=False,
-              custom_dataset=False):
+def load_data(data_dir, cols_a_to_rm=None, cols_b_to_rm=None, order_cols=False, remove_col_names=False, return_tables=False):
     """
     Load and preprocess data from the specified directory.
     
@@ -318,7 +317,10 @@ def load_data(data_dir, cols_a_to_rm=None, cols_b_to_rm=None, order_cols=False, 
                           range(len(pairs_test))], [1 if pairs_test['matching'].values[i] else 0 for i in
                                                     range(len(pairs_test))]
 
-    return table_a_serialized, table_b_serialized, X_train, y_train, X_valid, y_valid, X_test, y_test
+    if return_tables:
+        return table_a_serialized, table_b_serialized, table_a, table_b, X_train, y_train, X_valid, y_valid, X_test, y_test
+    else:
+        return table_a_serialized, table_b_serialized, X_train, y_train, X_valid, y_valid, X_test, y_test
 
 
 def add_transitive(preds, X_test_pairs):
