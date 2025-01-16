@@ -40,7 +40,14 @@ if "results_loaded" not in st.session_state:
     st.session_state.dataset_name = None
     st.session_state.uploaded_file_name = None
 
-st.set_page_config(page_title="Results", page_icon="📈")
+st.set_page_config(page_title="Results", page_icon="📈", layout="wide")
+
+st.sidebar.title("Presentation")
+st.sidebar.info(
+    "This page allows you to evaluate the results of the entity matching model.\n\n"
+    "Upload a CSV file containing the results of the model, and the page will display the evaluation metrics, "
+    "confusion matrix, ROC curve, and examples of predictions."
+)
 
 st.title("Results")
 

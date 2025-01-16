@@ -84,7 +84,30 @@ if "blocking_metrics" not in st.session_state:
 st.set_page_config(
     page_title="WavER Matching",
     page_icon="🔀",
+    layout="wide",
 )
+
+st.sidebar.title("Presentation")
+st.sidebar.markdown(
+    """
+    ## About this App
+
+    This app is a demonstration of the entity resolution project developed by **Tristan PERROT** for his degree project at KTH in collaboration with Wavestone.
+
+    The goal of this project is to provide a tool to perform entity resolution using different methods such as supervised learning, unsupervised learning, and few-shot learning.
+
+    ### Sections:
+    1. **Dataset**: Upload a dataset to perform entity resolution.
+    2. **Model**: Select the method to use for entity resolution.
+    3. **Blocking**: Perform blocking to reduce the number of pairs to compare.
+    4. **Matching**: Compare the pairs and evaluate the results.
+    5. **Results**: Download the results of the entity resolution.
+
+    The app is designed to be user-friendly and easy to use. If you have any questions or feedback, please feel free to contact me at [tristan.perrot@wavestone.com](mailto:tristan.perrot@wavestone.com).
+    """
+)
+
+
 
 st.title("WavER - Entity Resolution Project")
 st.write("Tristan PERROT degree project for KTH @ Wavestone")
@@ -322,6 +345,8 @@ if st.session_state.supervised:
     #     st.write(f"F1 score: {st.session_state.cross_encoder_metrics['f1']}")
     #     st.write(f"ROC AUC: {st.session_state.cross_encoder_metrics['roc_auc']}")
 
+        st.success("Matching done")
+
 else:
     unsupervised_method = st.selectbox(
         "Select the unsupervised method to use",
@@ -404,6 +429,8 @@ else:
     #     st.write(f"Recall: {st.session_state.unsupervised_metrics['recall']}")
     #     st.write(f"F1 score: {st.session_state.unsupervised_metrics['f1']}")
     #     st.write(f"ROC AUC: {st.session_state.unsupervised_metrics['roc_auc']}")
+
+    st.success("Matching done")
 
 ######## Evaluation ########
 
