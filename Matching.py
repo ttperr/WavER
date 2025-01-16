@@ -418,7 +418,7 @@ if st.session_state.output:
     st.download_button(
         label="Download results as CSV",
         data=csv_data,
-        file_name="results.csv",
+        file_name="results_" + st.session_state.dataset_name + ".csv",
         mime="text/csv",
     )
 else:
