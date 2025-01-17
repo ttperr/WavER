@@ -53,6 +53,7 @@ if 'blocked_pairs' not in st.session_state:
 
 if 'output' not in st.session_state:
     st.session_state.output = None
+    st.session_state.output_df = None
 
 if "blocking_metrics" not in st.session_state:
     st.session_state.blocking_metrics = {
@@ -60,24 +61,6 @@ if "blocking_metrics" not in st.session_state:
         "recall": None,
         "f1": None
     }
-
-# if 'cross_encoder_metrics' not in st.session_state:
-#     st.session_state.cross_encoder_metrics = {
-#         "accuracy": None,
-#         "precision": None,
-#         "recall": None,
-#         "f1": None,
-#         "roc_auc": None
-#     }
-
-# if 'unsupervied_metrics' not in st.session_state:
-#     st.session_state.unsupervised_metrics = {
-#         "accuracy": None,
-#         "precision": None,
-#         "recall": None,
-#         "f1": None,
-#         "roc_auc": None
-#     }
 
 ######## Streamlit app ########
 
@@ -222,7 +205,7 @@ if pair_used == BLOCKED_PAIRS_OPTION:
     n_neighbors = st.number_input("Number of neighbors to retrieve", value=15, min_value=1, max_value=40)
 
     if st.button("Run blocking"):
-        with st.status("Blocking..."):
+        with st.status("Blocking...", expanded=True):
             st.write("Blocking started")
 
             table_a_serialized, table_b_serialized, X_train_ids, y_train, X_valid_ids, y_valid, X_test_ids, y_test = load_data(
@@ -288,7 +271,7 @@ if st.session_state.supervised:
         index=1
     )
     if st.button("Run matching"):
-        with st.status("Matching in progress..."):
+        with st.status("Matching in progress...", expanded=True):
             st.write("Matching started")
 
             train_loader, valid_set, y_valid, test_set, X_test_ids, y_test = prepare_data_cross_encoder(
@@ -305,45 +288,6 @@ if st.session_state.supervised:
             st.session_state.output = output
 
             st.write("Model fitted")
-
-    #         accuracy, precision, recall, f1, roc_auc = evaluate_cross_encoder(logits, y_test, threshold=THRESHOLD)
-
-    #         st.write("Matching done")
-
-    #         st.session_state.cross_encoder_metrics["accuracy"] = accuracy
-    #         st.session_state.cross_encoder_metrics["precision"] = precision
-    #         st.session_state.cross_encoder_metrics["recall"] = recall
-    #         st.session_state.cross_encoder_metrics["f1"] = f1
-    #         st.session_state.cross_encoder_metrics["roc_auc"] = roc_auc
-
-    #     if st.session_state.cross_encoder_metrics["accuracy"] is not None:
-    #         # Print an example of the predictions
-    #         # Check the first 1 prediction and first 0 prediction
-    #         st.write("Example of predictions")
-    #         count_1, count_0 = 0, 0
-    #         for i in range(len(test_set)):
-    #             if y_test[i] == 1 and count_1 < 1:
-    #                 st.write(f"Prediction: {logits[i]} - True value: {y_test[i]}")
-    #                 st.write("Example of prediction 1:")
-    #                 st.write(f"Entity A: {test_set[i][0]}")
-    #                 st.write(f"Entity B: {test_set[i][1]}")
-    #                 count_1 += 1
-    #             elif y_test[i] == 0 and count_0 < 1:
-    #                 st.write(f"Prediction: {logits[i]} - True value: {y_test[i]}")
-    #                 st.write("Example of prediction 0:")
-    #                 st.write(f"Entity A: {test_set[i][0]}")
-    #                 st.write(f"Entity B: {test_set[i][1]}")
-    #                 count_0 += 1
-    #             if count_1 == 1 and count_0 == 1:
-    #                 break
-
-    # # Display metrics from session state
-    # if st.session_state.cross_encoder_metrics["accuracy"] is not None:
-    #     st.write(f"Accuracy: {st.session_state.cross_encoder_metrics['accuracy']}")
-    #     st.write(f"Precision: {st.session_state.cross_encoder_metrics['precision']}")
-    #     st.write(f"Recall: {st.session_state.cross_encoder_metrics['recall']}")
-    #     st.write(f"F1 score: {st.session_state.cross_encoder_metrics['f1']}")
-    #     st.write(f"ROC AUC: {st.session_state.cross_encoder_metrics['roc_auc']}")
 
         st.success("Matching done")
 
@@ -367,7 +311,7 @@ else:
     if st.button("Run matching"):
         if unsupervised_method == 'ZeroShot Embedding':
 
-            with st.status("Matching in progress..."):
+            with st.status("Matching in progress...", expanded=True):
                 similarity_matrix_test = None
                 X1_test, X2_test = None, None
 
@@ -409,26 +353,11 @@ else:
                     
                     output = [(X_test_ids[i][0], X_test_ids[i][1], similarity_matrix_test[i, i]) for i in range(len(X_test_ids))]
                     st.session_state.output = output
-
-                    # st.session_state.unsupervised_metrics["accuracy"] = accuracy
-                    # st.session_state.unsupervised_metrics["precision"] = precision
-                    # st.session_state.unsupervised_metrics["recall"] = recall
-                    # st.session_state.unsupervised_metrics["f1"] = f1
-                    # st.session_state.unsupervised_metrics["roc_auc"] = roc_auc
-
                 st.write("Matching done")
 
         else:
             ### Few shots
             pass
-
-    # Display metrics from session state
-    # if st.session_state.unsupervised_metrics["accuracy"] is not None:
-    #     st.write(f"Accuracy: {st.session_state.unsupervised_metrics['accuracy']}")
-    #     st.write(f"Precision: {st.session_state.unsupervised_metrics['precision']}")
-    #     st.write(f"Recall: {st.session_state.unsupervised_metrics['recall']}")
-    #     st.write(f"F1 score: {st.session_state.unsupervised_metrics['f1']}")
-    #     st.write(f"ROC AUC: {st.session_state.unsupervised_metrics['roc_auc']}")
 
     st.success("Matching done")
 
@@ -437,6 +366,8 @@ else:
 st.header("Result export")
 if st.session_state.output:
     output_df = pd.DataFrame(st.session_state.output, columns=['Entity A', 'Entity B', 'Score'])
+    
+    st.session_state.output_df = output_df
 
     # Convert DataFrame to CSV
     csv_data = output_df.to_csv(index=False)

@@ -43,7 +43,8 @@ if "results_loaded" not in st.session_state:
 st.set_page_config(page_title="Results", page_icon="📈", layout="wide")
 
 st.sidebar.title("Presentation")
-st.sidebar.info(
+st.sidebar.subheader("About this page")
+st.sidebar.write(
     "This page allows you to evaluate the results of the entity matching model.\n\n"
     "Upload a CSV file containing the results of the model, and the page will display the evaluation metrics, "
     "confusion matrix, ROC curve, and examples of predictions."
@@ -87,10 +88,31 @@ if uploaded_file is not None and not st.session_state.results_loaded:
             "y_test": y_test,
             "y_pred": y_pred,
         }
-        st.session_state.dataset_name = dataset_name
+        st.success("Dataset loaded successfully.")
+
+if (st.session_state.output_df is not None and not st.session_state.results_loaded) or st.button("Load last result"):
+    dataset_name = st.session_state.dataset_name
+    df = st.session_state.output_df
+    table_a_serialized, table_b_serialized, table_a, table_b, X_train, y_train, X_valid, y_valid, X_test_ids, y_test = load_data(
+        os.path.join(DATA_FOLDER, dataset_name), remove_col_names=False, order_cols=False, return_tables=True
+    )
+    logits = df["Score"].values
+    y_pred = [1 if logit > THRESHOLD else 0 for logit in logits]
+
+    # Save to session state
+    st.session_state.results_loaded = True
+    st.session_state.data = {
+        "df": df,
+        "table_a": table_a,
+        "table_b": table_b,
+        "X_test_ids": X_test_ids,
+        "y_test": y_test,
+        "y_pred": y_pred,
+    }
+    st.session_state.dataset_name = dataset_name
+    st.success("Last result loaded successfully.")
 
 if st.session_state.results_loaded:
-    st.success("Dataset loaded successfully.")
     data = st.session_state.data
     df = data["df"]
     table_a = data["table_a"]
@@ -174,18 +196,18 @@ if st.session_state.results_loaded:
             for feature in common_features
         ]
         common_df = prepare_dataframe(common_data)
-        st.dataframe(common_df, hide_index=True)
+        st.dataframe(common_df, hide_index=True, width=1920)
 
     # Display unique features of Entity A in a table
     if unique_a:
         st.markdown("### Unique Features in Entity A")
         unique_a_data = [{"Feature": f"{feature}", "Value": entity_a[feature]} for feature in unique_a]
         unique_a_df = prepare_dataframe(unique_a_data)
-        st.dataframe(unique_a_df, hide_index=True)
+        st.dataframe(unique_a_df, hide_index=True, width=1920)
 
     # Display unique features of Entity B in a table
     if unique_b:
         st.markdown("### Unique Features in Entity B")
         unique_b_data = [{"Feature": f"{feature}", "Value": entity_b[feature]} for feature in unique_b]
         unique_b_df = prepare_dataframe(unique_b_data)
-        st.dataframe(unique_b_df, hide_index=True)
+        st.dataframe(unique_b_df, hide_index=True, width=1920)
