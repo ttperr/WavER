@@ -123,7 +123,7 @@ def serialize_entities(entity1, entity2=None, remove_col_names=False):
     - If only one entity is provided, the [SEP] token and the second part of the string will be omitted.
     """
     entity1_nan = entity1.fillna('')
-    entity2_nan = entity2.fillna('') if entity2 is not None else pd.Series()
+    entity2_nan = entity2.fillna('') if entity2 is not None else pd.Series(dtype='str')
     if remove_col_names:
         e1_string = " ".join([f'{val}' for val in entity1_nan])
         e2_string = " ".join([f'{val}' for val in entity2_nan]) if entity2 is not None else ""

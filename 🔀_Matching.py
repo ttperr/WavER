@@ -1,10 +1,29 @@
 import os
+import time
 
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+import seaborn as sns
 import streamlit as st
 import torch
-from sentence_transformers import SentenceTransformer
+import torch.nn as nn
+from datasets import Dataset
+from sentence_transformers import (CrossEncoder, InputExample,
+                                   SentencesDataset, SentenceTransformer,
+                                   SentenceTransformerTrainer,
+                                   SentenceTransformerTrainingArguments,
+                                   losses, util)
+from sentence_transformers.cross_encoder.evaluation import \
+    CEBinaryClassificationEvaluator
+from sklearn.metrics import (classification_report, confusion_matrix, f1_score,
+                             precision_score, recall_score, roc_auc_score,
+                             roc_curve)
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.mixture import GaussianMixture
+from torch.nn import BCEWithLogitsLoss
+from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 import import_data
 from model.Blocking import (get_blocking_metrics, merge_indices,
@@ -50,6 +69,9 @@ if 'testing' not in st.session_state:
 
 if 'blocked_pairs' not in st.session_state:
     st.session_state.blocked_pairs = None
+    
+if 'training_pairs_few_shot' not in st.session_state:
+    st.session_state.training_pairs_few_shot = None
 
 if 'output' not in st.session_state:
     st.session_state.output = None
@@ -292,11 +314,6 @@ if st.session_state.supervised:
         st.success("Matching done")
 
 else:
-    unsupervised_method = st.selectbox(
-        "Select the unsupervised method to use",
-        ['ZeroShot Embedding', 'LLM Inference'],
-        index=0
-    )
 
     model_name_zero_shot = st.selectbox(
         "Select the model to use",
@@ -308,56 +325,104 @@ else:
         index=1
     )
 
+    few_shot_method = st.checkbox("Use few-shot learning", key="few_shot_method", value=False)
+    training_pairs = None
+
+    if few_shot_method:
+        # Either upload training pairs or select from the dataset by searching in it
+        training_pairs = st.file_uploader("Upload the training pairs (format: idA, idB)", type=['csv'])
+
+        if training_pairs is not None:
+            training_pairs = pd.read_csv(training_pairs)
+            # Save the training pairs in the session state
+            st.session_state.training_pairs_few_shot = training_pairs
+
     if st.button("Run matching"):
-        if unsupervised_method == 'ZeroShot Embedding':
+        with st.status("Matching in progress...", expanded=True):
+            similarity_matrix_test = None
+            X1_test, X2_test = None, None
 
-            with st.status("Matching in progress...", expanded=True):
-                similarity_matrix_test = None
-                X1_test, X2_test = None, None
+            table_a_serialized, table_b_serialized, X_train_ids, y_train, X_valid_ids, y_valid, X_test_ids, y_test = load_data(
+                os.path.join(DATA_FOLDER, st.session_state.dataset_name), remove_col_names=remove_col_name,
+                order_cols=order_cols)
 
-                table_a_serialized, table_b_serialized, X_train_ids, y_train, X_valid_ids, y_valid, X_test_ids, y_test = load_data(
-                    os.path.join(DATA_FOLDER, st.session_state.dataset_name), remove_col_names=remove_col_name,
-                    order_cols=order_cols)
+            if st.session_state.known_pairs:
+                X1_test, X2_test = [table_a_serialized[i[0]] for i in X_test_ids], [table_b_serialized[i[1]] for i
+                                                                                    in X_test_ids]
 
-                if st.session_state.known_pairs:
-                    X1_test, X2_test = [table_a_serialized[i[0]] for i in X_test_ids], [table_b_serialized[i[1]] for i
+            elif st.session_state.blocked_pairs is not None:
+                X_test_ids = []
+                for i in range(len(table_a_serialized)):
+                    for j in blocked_pairs[i]:
+                        X_test_ids.append((i, j))
+
+                X1_test, X2_test = [table_a_serialized[i[0]] for i in X_test_ids], [table_b_serialized[i[1]] for i
                                                                                         in X_test_ids]
 
-                elif st.session_state.blocked_pairs is not None:
-                    X_test_ids = []
-                    for i in range(len(table_a_serialized)):
-                        for j in blocked_pairs[i]:
-                            X_test_ids.append((i, j))
+            else:
+                st.write("Please run the blocking first")
+                st.stop()
 
-                    X1_test, X2_test = [table_a_serialized[i[0]] for i in X_test_ids], [table_b_serialized[i[1]] for i
-                                                                                         in X_test_ids]
-
-                else:
-                    st.write("Please run the blocking first")
-                    st.stop()
-
-                model = SentenceTransformer(model_name_zero_shot, device=device)
-
-                embeddings1_test = model.encode(X1_test)
-                embeddings2_test = model.encode(X2_test)
-
+            model = SentenceTransformer(model_name_zero_shot, device=device)
+            
+            if few_shot_method and training_pairs is None:
+                st.write("Please upload the training pairs")
+                st.stop()
+            elif few_shot_method:
+                cols = st.session_state.training_pairs_few_shot.columns
+                X1_train_ids, X2_train_ids = st.session_state.training_pairs_few_shot[cols[0]].values, st.session_state.training_pairs_few_shot[cols[1]].values
+                print(X1_train_ids, X2_train_ids)
+                print(len(table_a_serialized), len(table_b_serialized))
+                X1_train, X2_train = [table_a_serialized[i - len(table_b_serialized)] for i in X1_train_ids], [table_b_serialized[i] for i in X2_train_ids]
+                y_train = st.session_state.training_pairs_few_shot[cols[2]].values
+                
+                embeddings1_train = model.encode(X1_train)
+                embeddings1_train = model.encode(X2_train)
+                
                 st.write("Embeddings done")
+                
+                # Prepare the dataset for training
+                train_examples = [InputExample(texts=[X1_train[i], X2_train[i]], label=y_train[i]) for i in range(len(X1_train))]
 
-                similarity_matrix_test = cosine_similarity(embeddings1_test, embeddings2_test)
+                # Convert to a dataset suitable for Sentence Transformers
+                train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=16, num_workers=0)
 
-                st.write("Similarity matrix done")
+                # Define the loss function
+                train_loss = losses.CosineSimilarityLoss(model=model)
 
-                if similarity_matrix_test is not None:
-                    accuracy, precision, recall, f1, roc_auc = evaluate_zero_shot(similarity_matrix_test, y_test,
-                                                                                  threshold=THRESHOLD)
-                    
-                    output = [(X_test_ids[i][0], X_test_ids[i][1], similarity_matrix_test[i, i]) for i in range(len(X_test_ids))]
-                    st.session_state.output = output
-                st.write("Matching done")
+                # Training parameters
+                num_epochs = 5
+                warmup_steps = int(len(train_dataloader) * num_epochs * 0.1)  # 10% of training steps for warm-up
 
-        else:
-            ### Few shots
-            pass
+                # Define a directory to save the model
+                model_save_path = "output/trained_sentence_transformer_model"
+
+                # Train the model
+                model.fit(
+                    train_objectives=[(train_dataloader, train_loss)],
+                    epochs=num_epochs,
+                    warmup_steps=warmup_steps,
+                    output_path=model_save_path
+                )
+
+                st.write("Model trained")
+
+            embeddings1_test = model.encode(X1_test)
+            embeddings2_test = model.encode(X2_test)
+
+            st.write("Embeddings done")
+
+            similarity_matrix_test = cosine_similarity(embeddings1_test, embeddings2_test)
+
+            st.write("Similarity matrix done")
+
+            if similarity_matrix_test is not None:
+                accuracy, precision, recall, f1, roc_auc = evaluate_zero_shot(similarity_matrix_test, y_test,
+                                                                                threshold=THRESHOLD)
+                
+                output = [(X_test_ids[i][0], X_test_ids[i][1], similarity_matrix_test[i, i]) for i in range(len(X_test_ids))]
+                st.session_state.output = output
+            st.write("Matching done")
 
     st.success("Matching done")
 
