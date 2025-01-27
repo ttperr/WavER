@@ -41,8 +41,11 @@ def download_dataset(dataset):
 
         url = URL_PREFIX + dataset_url + os.sep + ZIP_FILENAME
         r = requests.get(url, params={'downloadformat': 'zip'})
+        print(url)
         with open(DATA_FOLDER + dataset + os.sep + ZIP_FILENAME, 'wb') as f:
             f.write(r.content)
+
+        print(DATA_FOLDER + dataset + os.sep + ZIP_FILENAME)
 
         with zipfile.ZipFile(DATA_FOLDER + dataset + os.sep + ZIP_FILENAME, 'r') as z:
             z.extractall(DATA_FOLDER + dataset)
