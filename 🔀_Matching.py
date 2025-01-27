@@ -139,8 +139,6 @@ if dataset_option == BENCHMARK_DATASET_OPTION:
     )
 
     st.session_state.dataset_name = dataset_name
-    st.session_state.known_pairs = any(
-        file.startswith("gs_") for file in os.listdir(os.path.join(DATA_FOLDER, dataset_name)))
 
     if st.button("Download dataset"):
         downloaded = import_data.download_dataset(dataset_name)
@@ -149,6 +147,11 @@ if dataset_option == BENCHMARK_DATASET_OPTION:
         else:
             st.error(
                 "Dataset already exists, skipping download. If you want to re-download, please delete the folder first.")
+
+    if not(os.path.exists(os.path.join(DATA_FOLDER, dataset_name))):
+        st.warning("Dataset not found, please download it first")
+        st.stop()
+
 else:
     tableA = st.file_uploader("Upload the table A (format: subject_id, col1, col2,..)", type=['csv'])
     tableB = st.file_uploader("Upload the table B (format: subject_id, col1, col2,..)", type=['csv'])
@@ -177,8 +180,6 @@ else:
             test_pairs = st.file_uploader("Upload the test pairs (format: idA, idB)", type=['csv'])
 
     st.session_state.dataset_name = CUSTOM_DATASET_NAME
-    st.session_state.known_pairs = any(
-        file.startswith("gs_") for file in os.listdir(os.path.join(DATA_FOLDER, st.session_state.dataset_name)))
 
     if st.button("Upload dataset"):
         if (not train_pairs or not val_pairs or not test_pairs) and splitted_pairs == ALREADY_SPLIT_OPTION:
@@ -198,6 +199,9 @@ else:
 
 st.header("Model")
 st.subheader("Blocking")
+
+st.session_state.known_pairs = any(
+        file.startswith("gs_") for file in os.listdir(os.path.join(DATA_FOLDER, st.session_state.dataset_name))) if st.session_state.dataset_name else False
 
 pair_used = st.radio(
     "Select the pairs to use",
