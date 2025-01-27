@@ -93,6 +93,11 @@ if uploaded_file is not None and not st.session_state.results_loaded:
 if (st.session_state.output_df is not None and not st.session_state.results_loaded) or st.button("Load last result"):
     dataset_name = st.session_state.dataset_name
     df = st.session_state.output_df
+    
+    if dataset_name is None:
+        st.error("Error: No dataset name found in the session state.")
+        st.stop()
+        
     table_a_serialized, table_b_serialized, table_a, table_b, X_train, y_train, X_valid, y_valid, X_test_ids, y_test = load_data(
         os.path.join(DATA_FOLDER, dataset_name), remove_col_names=False, order_cols=False, return_tables=True
     )
