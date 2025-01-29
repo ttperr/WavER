@@ -212,7 +212,7 @@ class BertModel(nn.Module):
         self.train()
 
         optimizer = AdamW(self.parameters(), lr=lr, weight_decay=weight_decay)
-        loss_fn = nn.BCELoss()
+        loss_fn = nn.BCEWithLogitsLoss()
 
         best_val_loss = float('inf')
         best_model_weights = None
@@ -235,8 +235,7 @@ class BertModel(nn.Module):
                 labels_onehot = F.one_hot(labels, num_classes=2).float()
 
                 logits = self(input_ids, attention_mask)
-                probs = torch.softmax(logits, dim=1)
-                loss = loss_fn(probs, labels_onehot)
+                loss = loss_fn(logits, labels_onehot)
                 loss.backward()
                 optimizer.step()
 
@@ -257,8 +256,7 @@ class BertModel(nn.Module):
                     labels_onehot = F.one_hot(labels, num_classes=2).float()
 
                     logits = self(input_ids, attention_mask)
-                    probs = torch.softmax(logits, dim=1)
-                    loss = loss_fn(probs, labels_onehot)
+                    loss = loss_fn(logits, labels_onehot)
                     val_loss += loss.item()
 
                     preds = torch.argmax(logits, dim=1)
@@ -307,6 +305,29 @@ class BertModel(nn.Module):
         mean_time = sum(self.time_per_epoch) / len(self.time_per_epoch) if len(self.time_per_epoch) > 0 else 0
         print(f"Mean time per epoch: {mean_time:.2f}")
 
+    def predict_probs(self, test_loader):
+        """
+        Generates predictions for the given test data.
+
+        Args:
+            test_loader (DataLoader): DataLoader for test data.
+
+        Returns:
+            torch.Tensor: Predicted probabilities for the test data.
+        """
+        self.eval()
+        all_probs = []
+        with torch.no_grad():
+            for batch in tqdm(test_loader, desc="Testing", unit="batch"):
+                input_ids = batch['input_ids'].to(self.device)
+                attention_mask = batch['attention_mask'].to(self.device)
+
+                logits = self(input_ids, attention_mask)
+                probs = torch.softmax(logits, dim=1)
+                all_probs.extend(probs[:, 1].cpu().numpy())
+
+        return torch.tensor(all_probs, device=self.device)
+
     def evaluate(self, test_loader):
         """
         Evaluates the model on the test data and prints a classification report.
@@ -318,7 +339,7 @@ class BertModel(nn.Module):
             torch.Tensor: Predictions for the test data.
         """
         self.eval()
-        loss_fn = nn.BCELoss()
+        loss_fn = nn.BCEWithLogitsLoss()
         test_loss = 0.0
         all_preds = []
         all_labels = []
@@ -330,8 +351,7 @@ class BertModel(nn.Module):
                 labels_onehot = F.one_hot(labels, num_classes=2).float()
 
                 logits = self(input_ids, attention_mask)
-                probs = torch.softmax(logits, dim=1)
-                loss = loss_fn(probs, labels_onehot)
+                loss = loss_fn(logits, labels_onehot)
                 test_loss += loss.item()
 
                 preds = torch.argmax(logits, dim=1)
