@@ -4,13 +4,17 @@
 
 ## 📌 Overview
 
-WavER (Wavestone Entity Resolution) is a comprehensive entity resolution pipeline designed to improve accuracy and scalability across diverse datasets. It integrates various blocking techniques, supervised and unsupervised matching models, and explores recent advances in zero-shot and few-shot learning using Large Language Models (LLMs).
+WavER (Wavestone Entity Resolution) is a comprehensive entity resolution pipeline designed to improve accuracy and
+scalability across diverse datasets. It integrates various blocking techniques, supervised and unsupervised matching
+models, and explores recent advances in zero-shot and few-shot learning using Large Language Models (LLMs).
 
-This project builds on benchmark results in entity resolution, comparing against state-of-the-art methods from _Papers with Code_ and other industry benchmarks.
+This project builds on benchmark results in entity resolution, comparing against state-of-the-art methods from _Papers
+with Code_ and other industry benchmarks.
 
 ## 🚀 Features
 
-- **Blocking Techniques**: Scalable candidate pair reduction to improve efficiency with graph-based and rule-based strategies.
+- **Blocking Techniques**: Scalable candidate pair reduction to improve efficiency with graph-based and rule-based
+  strategies.
 - **Pairwise Matching Models**: Supervised and unsupervised approaches for entity matching.
 - **LLM-Based Matching**: Zero-shot and few-shot learning approaches for adaptable resolution.
 - **Benchmark Comparisons**: Evaluation against existing entity resolution models.
@@ -37,7 +41,8 @@ WavER/
 
 ## 📊 Results
 
-The pipeline has been tested on multiple datasets, demonstrating improvements in both accuracy and efficiency. Key findings include:
+The pipeline has been tested on multiple datasets, demonstrating improvements in both accuracy and efficiency. Key
+findings include:
 
 - **Reduction in candidate pairs via efficient blocking** (X% improvement in speed).
 - **Supervised models outperform traditional baselines** (Y% higher F1-score).
@@ -70,10 +75,10 @@ If you find this work useful, please consider citing:
 
 ```bibtex
 @article{yourarticle,
-  title={WavER: A Unified Pipeline for Scalable Entity Resolution},
-  author={Your Name},
-  journal={Journal of Data Science},
-  year={2022}
+    title = {WavER: A Unified Pipeline for Scalable Entity Resolution},
+    author = {Your Name},
+    journal = {Journal of Data Science},
+    year = {2022}
 }
 ```
 

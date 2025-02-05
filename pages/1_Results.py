@@ -2,7 +2,8 @@ import os
 import re
 import pandas as pd
 import streamlit as st
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix, roc_curve, auc
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix, \
+    roc_curve, auc
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -16,6 +17,7 @@ dataset_suffix_keys = set(import_data.DATASET_SUFFIX.keys())
 regex = r"^results_([^_]+)\.csv$"
 THRESHOLD = 0.65
 
+
 ######## Functions ########
 
 def validate_filename(filename):
@@ -25,11 +27,13 @@ def validate_filename(filename):
         return dataset_name if dataset_name in dataset_suffix_keys or dataset_name == "custom_dataset" else None
     return None
 
+
 def prepare_dataframe(data):
     df = pd.DataFrame(data)
     for col in df.columns:
         df[col] = df[col].astype(str)  # Convert all columns to strings
     return df
+
 
 ######## Page ########
 
@@ -72,7 +76,8 @@ if uploaded_file is not None and not st.session_state.results_loaded:
     filename = os.path.basename(uploaded_file.name)
     dataset_name = validate_filename(filename)
     if dataset_name is None:
-        st.error("The uploaded file is not a valid result file. A valid result file should be named as 'results_DATASET-NAME.csv'.")
+        st.error(
+            "The uploaded file is not a valid result file. A valid result file should be named as 'results_DATASET-NAME.csv'.")
     else:
         df = pd.read_csv(uploaded_file)
         table_a_serialized, table_b_serialized, table_a, table_b, X_train, y_train, X_valid, y_valid, X_test_ids, y_test = load_data(
@@ -96,11 +101,11 @@ if uploaded_file is not None and not st.session_state.results_loaded:
 if (st.session_state.output_df is not None and not st.session_state.results_loaded) or st.button("Load last result"):
     dataset_name = st.session_state.dataset_name
     df = st.session_state.output_df
-    
+
     if dataset_name is None:
         st.error("Error: No dataset name found in the session state.")
         st.stop()
-        
+
     table_a_serialized, table_b_serialized, table_a, table_b, X_train, y_train, X_valid, y_valid, X_test_ids, y_test = load_data(
         os.path.join(DATA_FOLDER, dataset_name), remove_col_names=False, order_cols=False, return_tables=True
     )

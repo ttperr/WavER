@@ -1,38 +1,22 @@
 import os
-import time
 
-import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
-import seaborn as sns
 import streamlit as st
 import torch
-import torch.nn as nn
-from datasets import Dataset
-from sentence_transformers import (CrossEncoder, InputExample,
-                                   SentencesDataset, SentenceTransformer,
-                                   SentenceTransformerTrainer,
-                                   SentenceTransformerTrainingArguments,
-                                   losses, util)
-from sentence_transformers.cross_encoder.evaluation import \
-    CEBinaryClassificationEvaluator
-from sklearn.metrics import (classification_report, confusion_matrix, f1_score,
-                             precision_score, recall_score, roc_auc_score,
-                             roc_curve)
+from sentence_transformers import (InputExample,
+                                   SentenceTransformer,
+                                   losses)
 from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.mixture import GaussianMixture
-from torch.nn import BCEWithLogitsLoss
 from torch.utils.data import DataLoader
-from tqdm import tqdm
 
 import src.import_data as import_data
 from model.Blocking import (get_blocking_metrics, merge_indices,
                             merge_true_matches, perform_blocking_sbert,
                             perform_blocking_tfidf)
-from model.CrossEncoderModel import (evaluate_cross_encoder, fit_cross_encoder,
-                                prepare_data_cross_encoder)
-from model.utils import load_data, save_tables
+from model.CrossEncoderModel import (fit_cross_encoder,
+                                     prepare_data_cross_encoder)
 from model.ZeroShotModel import evaluate_zero_shot
+from model.utils import load_data, save_tables
 
 ######## Constants ########
 
@@ -53,10 +37,12 @@ CUSTOM_DATASET_OPTION = "Use a custom dataset"
 NO_TRUE_MATCHES_OPTION = "I don't have any true matches"
 CUSTOM_DATASET_NAME = "custom_dataset"
 
+
 ######## Session state ########
 
 def reset_training_pairs():
     st.session_state.training_pairs_few_shot = None
+
 
 if 'supervised_model' not in st.session_state:
     st.session_state.supervised_model = True
@@ -74,7 +60,7 @@ if 'testing_mode' not in st.session_state:
 
 if 'blocked_pairs' not in st.session_state:
     st.session_state.blocked_pairs = None
-    
+
 if 'training_pairs_few_shot' not in st.session_state:
     st.session_state.training_pairs_few_shot = None
 
@@ -120,8 +106,6 @@ st.sidebar.markdown(
     """
 )
 
-
-
 st.title("WavER - Entity Resolution Project")
 st.write("Tristan PERROT degree project for KTH @ Wavestone")
 
@@ -156,7 +140,7 @@ if dataset_option == BENCHMARK_DATASET_OPTION:
             st.error(
                 "Dataset already exists, skipping download. If you want to re-download, please delete the folder first.")
 
-    if not(os.path.exists(os.path.join(DATA_FOLDER, dataset_name))):
+    if not (os.path.exists(os.path.join(DATA_FOLDER, dataset_name))):
         st.warning("Dataset not found, please download it first")
         st.stop()
 
@@ -209,14 +193,16 @@ st.header("Model")
 st.subheader("Blocking")
 
 if st.session_state.dataset_name:
-    st.session_state.known_pairs = any(file.startswith("gs_") for file in os.listdir(os.path.join(DATA_FOLDER, st.session_state.dataset_name)))
-    
-    st.session_state.cols_a, st.session_state.cols_b = load_data(os.path.join(DATA_FOLDER, st.session_state.dataset_name), return_only_col_names=True)
-    
+    st.session_state.known_pairs = any(
+        file.startswith("gs_") for file in os.listdir(os.path.join(DATA_FOLDER, st.session_state.dataset_name)))
+
+    st.session_state.cols_a, st.session_state.cols_b = load_data(
+        os.path.join(DATA_FOLDER, st.session_state.dataset_name), return_only_col_names=True)
+
     # Remove id column
     st.session_state.cols_a = st.session_state.cols_a[1:]
     st.session_state.cols_b = st.session_state.cols_b[1:]
-    
+
 pair_used = st.radio(
     "Select the pairs to use",
     ["Already included pairs", BLOCKED_PAIRS_OPTION] if st.session_state.known_pairs else [BLOCKED_PAIRS_OPTION]
@@ -238,15 +224,18 @@ if pair_used == BLOCKED_PAIRS_OPTION:
     with columns[0]:
         merge_with_tfidf = st.checkbox("Merge with TF-IDF (recommended)", key="merge_with_tfidf_blocking", value=True)
     with columns[1]:
-        remove_col_name = st.checkbox("Remove column name in serialization (recommended)", key="remove_col_name_blocking", value=True)
+        remove_col_name = st.checkbox("Remove column name in serialization (recommended)",
+                                      key="remove_col_name_blocking", value=True)
     with columns[2]:
         order_cols = st.checkbox("Order columns (not recommended)", key="order_cols_blocking")
-        
+
     columns = st.columns(2)
     with columns[0]:
-        cols_a_to_rm = st.multiselect("Select the columns to remove in table A", st.session_state.cols_a, key="cols_a_to_rm_blocking")
+        cols_a_to_rm = st.multiselect("Select the columns to remove in table A", st.session_state.cols_a,
+                                      key="cols_a_to_rm_blocking")
     with columns[1]:
-        cols_b_to_rm = st.multiselect("Select the columns to remove in table B", st.session_state.cols_b, key="cols_b_to_rm_blocking")
+        cols_b_to_rm = st.multiselect("Select the columns to remove in table B", st.session_state.cols_b,
+                                      key="cols_b_to_rm_blocking")
 
     n_neighbors = st.number_input("Number of neighbors to retrieve", value=15, min_value=1, max_value=40)
 
@@ -302,11 +291,14 @@ st.subheader("Matching")
 
 columns = st.columns(2)
 with columns[0]:
-    remove_col_name = st.checkbox("Remove column name in serialization  (recommended)", key="remove_col_name_matching", value=True)
-    cols_a_to_rm = st.multiselect("Select the columns to remove in table A", st.session_state.cols_a, key="cols_a_to_rm_matching")
+    remove_col_name = st.checkbox("Remove column name in serialization  (recommended)", key="remove_col_name_matching",
+                                  value=True)
+    cols_a_to_rm = st.multiselect("Select the columns to remove in table A", st.session_state.cols_a,
+                                  key="cols_a_to_rm_matching")
 with columns[1]:
     order_cols = st.checkbox("Order columns (recommended)", key="order_cols_matching", value=True)
-    cols_b_to_rm = st.multiselect("Select the columns to remove in table B", st.session_state.cols_b, key="cols_b_to_rm_matching")
+    cols_b_to_rm = st.multiselect("Select the columns to remove in table B", st.session_state.cols_b,
+                                  key="cols_b_to_rm_matching")
 
 if st.session_state.supervised_model:
     model_name = st.selectbox(
@@ -332,7 +324,7 @@ if st.session_state.supervised_model:
             logits, train_time = fit_cross_encoder(model_name, train_loader, valid_set, y_valid, test_set,
                                                    epochs=EPOCHS, learning_rate=LEARNING_RATE,
                                                    weight_decay=WEIGHT_DECAY, device=device)
-            
+
             output = [(X_test_ids[i][0], X_test_ids[i][1], logits[i]) for i in range(len(X_test_ids))]
             st.session_state.output = output
 
@@ -341,7 +333,7 @@ if st.session_state.supervised_model:
         st.success("Matching done")
 
 else:
-    
+
     few_shot_method = st.selectbox(
         "Select the method to use",
         ["Zero-shot", "Few-shot"],
@@ -365,7 +357,7 @@ else:
             ["Upload training pairs", "Create here"],
             on_change=reset_training_pairs
         ) == "Upload training pairs"
-        
+
         if upload_training_pairs:
             # Either upload training pairs or select from the dataset by searching in it
             training_pairs = st.file_uploader("Upload the training pairs (format: idA, idB)", type=['csv'])
@@ -375,7 +367,7 @@ else:
                 # Save the training pairs in the session state
                 st.session_state.training_pairs_few_shot = training_pairs
                 print(training_pairs)
-                
+
         else:
             st.write("Select the training pairs from the tables")
 
@@ -405,26 +397,43 @@ else:
                         for i, index_b in enumerate(new_matching_row_b[:10]):
                             st.write(f"{i}: {table_b_serialized[index_b]}")
 
-                    st.write(f"Found {len(new_matching_row_a)} matching rows in table A and {len(new_matching_row_b)} in table B")
+                    st.write(
+                        f"Found {len(new_matching_row_a)} matching rows in table A and {len(new_matching_row_b)} in table B")
                     col1, col2 = st.columns(2)
-                    
+
                     with col1:
-                        selected_indices_a = st.selectbox("Select the indice in table A", range(len(new_matching_row_a)), index=0)
+                        selected_indices_a = st.selectbox("Select the indice in table A",
+                                                          range(len(new_matching_row_a)), index=0)
                     with col2:
-                        selected_indices_b = st.selectbox("Select the indice in table B", range(len(new_matching_row_b)), index=0)
+                        selected_indices_b = st.selectbox("Select the indice in table B",
+                                                          range(len(new_matching_row_b)), index=0)
                     label = st.selectbox("Select the label", [0, 1], index=0)
-                    
+
                     if st.button("Add pair"):
                         if st.session_state.training_pairs_few_shot is None:
                             st.session_state.training_pairs_few_shot = pd.DataFrame(columns=["idA", "idB", "label"])
-                        st.session_state.training_pairs_few_shot = pd.concat([st.session_state.training_pairs_few_shot, pd.DataFrame([[new_matching_row_a[selected_indices_a], new_matching_row_b[selected_indices_b], label]], columns=["idA", "idB", "label"])])
+                        st.session_state.training_pairs_few_shot = pd.concat([st.session_state.training_pairs_few_shot,
+                                                                              pd.DataFrame([[new_matching_row_a[
+                                                                                                 selected_indices_a],
+                                                                                             new_matching_row_b[
+                                                                                                 selected_indices_b],
+                                                                                             label]],
+                                                                                           columns=["idA", "idB",
+                                                                                                    "label"])])
                         print(st.session_state.training_pairs_few_shot)
                     st.write("Actual training pairs:")
                     # Print but write the actual training pairs and not the indices in a Dataframe format
                     df_training_pairs = pd.DataFrame(columns=["Entity A", "Entity B", "Label"])
                     if st.session_state.training_pairs_few_shot is not None:
                         for i, row in st.session_state.training_pairs_few_shot.iterrows():
-                            df_training_pairs = pd.concat([df_training_pairs, pd.DataFrame([[table_a_serialized[int(row["idA"])], table_b_serialized[int(row["idB"])], row["label"]]], columns=["Entity A", "Entity B", "Label"])])
+                            df_training_pairs = pd.concat([df_training_pairs, pd.DataFrame([[table_a_serialized[
+                                                                                                 int(row["idA"])],
+                                                                                             table_b_serialized[
+                                                                                                 int(row["idB"])],
+                                                                                             row["label"]]],
+                                                                                           columns=["Entity A",
+                                                                                                    "Entity B",
+                                                                                                    "Label"])])
                     if st.button("Reset training pairs"):
                         st.session_state.training_pairs_few_shot = None
                         st.write("Training pairs reset")
@@ -453,32 +462,35 @@ else:
                         X_test_ids.append((i, j))
 
                 X1_test, X2_test = [table_a_serialized[i[0]] for i in X_test_ids], [table_b_serialized[i[1]] for i
-                                                                                        in X_test_ids]
+                                                                                    in X_test_ids]
 
             else:
                 st.write("Please run the blocking first")
                 st.stop()
 
             model = SentenceTransformer(model_name_zero_shot, device=device)
-            
+
             if few_shot_method and st.session_state.training_pairs_few_shot is None:
                 st.write("Please upload the training pairs")
                 st.stop()
             elif few_shot_method:
                 cols = st.session_state.training_pairs_few_shot.columns
-                X1_train_ids, X2_train_ids = st.session_state.training_pairs_few_shot[cols[0]].values, st.session_state.training_pairs_few_shot[cols[1]].values
+                X1_train_ids, X2_train_ids = st.session_state.training_pairs_few_shot[cols[0]].values, \
+                st.session_state.training_pairs_few_shot[cols[1]].values
                 print(X1_train_ids, X2_train_ids)
                 print(len(table_a_serialized), len(table_b_serialized))
-                X1_train, X2_train = [table_a_serialized[i - len(table_b_serialized)] for i in X1_train_ids], [table_b_serialized[i] for i in X2_train_ids]
+                X1_train, X2_train = [table_a_serialized[i - len(table_b_serialized)] for i in X1_train_ids], [
+                    table_b_serialized[i] for i in X2_train_ids]
                 y_train = st.session_state.training_pairs_few_shot[cols[2]].values
-                
+
                 embeddings1_train = model.encode(X1_train)
                 embeddings1_train = model.encode(X2_train)
-                
+
                 st.write("Embeddings done")
-                
+
                 # Prepare the dataset for training
-                train_examples = [InputExample(texts=[X1_train[i], X2_train[i]], label=y_train[i]) for i in range(len(X1_train))]
+                train_examples = [InputExample(texts=[X1_train[i], X2_train[i]], label=y_train[i]) for i in
+                                  range(len(X1_train))]
 
                 # Convert to a dataset suitable for Sentence Transformers
                 train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=16, num_workers=0)
@@ -514,9 +526,10 @@ else:
 
             if similarity_matrix_test is not None:
                 accuracy, precision, recall, f1, roc_auc = evaluate_zero_shot(similarity_matrix_test, y_test,
-                                                                                threshold=THRESHOLD)
-                
-                output = [(X_test_ids[i][0], X_test_ids[i][1], similarity_matrix_test[i, i]) for i in range(len(X_test_ids))]
+                                                                              threshold=THRESHOLD)
+
+                output = [(X_test_ids[i][0], X_test_ids[i][1], similarity_matrix_test[i, i]) for i in
+                          range(len(X_test_ids))]
                 st.session_state.output = output
             st.write("Matching done")
 
@@ -527,7 +540,7 @@ else:
 st.header("Result export")
 if st.session_state.output:
     output_df = pd.DataFrame(st.session_state.output, columns=['Entity A', 'Entity B', 'Score'])
-    
+
     st.session_state.output_df = output_df
 
     # Convert DataFrame to CSV
