@@ -13,9 +13,11 @@ from torch.utils.data import DataLoader
 from model.utils import load_data
 
 
-def prepare_data_cross_encoder(data_dir, remove_col_names=True, order_cols=True, blocked_pairs=None):
+def prepare_data_cross_encoder(data_dir, remove_col_names=True, order_cols=True, blocked_pairs=None, cols_a_to_rm=None,
+                                 cols_b_to_rm=None):
     table_a_serialized, table_b_serialized, X_train_ids, y_train, X_valid_ids, y_valid, X_test_ids, y_test = load_data(
-        data_dir, remove_col_names=remove_col_names, order_cols=order_cols)
+        data_dir, remove_col_names=remove_col_names, order_cols=order_cols, cols_a_to_rm=cols_a_to_rm,
+        cols_b_to_rm=cols_b_to_rm)
 
     if blocked_pairs is not None:
         all_true_matches = set()

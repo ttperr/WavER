@@ -22,16 +22,17 @@ WavER/
 │── data/ # Datasets and preprocessed data
 │── graphs/ # Graphs representations for entity resolution
 │── model/ # Trained models and evaluation scripts
+│── pages/ # StreamLit application pages
 │── papers/ # Related research papers and benchmarks
 │── results/ # Benchmark comparisons and results
 │── src/ # Core pipeline implementation
-│ │── app/ # StreamLit application for interactive testing
 │ │── bert/ # Pairwise entity matching models
 │ │── blocking/ # Blocking strategies
 │ │── cross-encoder/ # Graph-based entity resolution
 │ │── zero-shot/ # Zero-shot and few-shot entity matching
 │── README.md # Project documentation
 │── requirements.txt # Dependencies
+│── Matching.py # StreamLit application entry point
 ```
 
 ## 📊 Results
@@ -60,7 +61,7 @@ pip install -r requirements.txt
 Run the POC using:
 
 ```bash
-streamlit run run.py
+streamlit run Matching.py
 ```
 
 ## 📖 Citation

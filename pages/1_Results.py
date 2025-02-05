@@ -40,6 +40,9 @@ if "results_loaded" not in st.session_state:
     st.session_state.dataset_name = None
     st.session_state.uploaded_file_name = None
 
+if 'dataset_name' not in st.session_state:
+    st.session_state.dataset_name = None
+
 st.set_page_config(page_title="Results", page_icon="📈", layout="wide")
 
 st.sidebar.title("Presentation")

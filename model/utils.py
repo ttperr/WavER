@@ -176,7 +176,7 @@ def deserialize_entities(input_string):
     return e1_df, e2_df
 
 
-def load_data(data_dir, cols_a_to_rm=None, cols_b_to_rm=None, order_cols=False, remove_col_names=False, return_tables=False):
+def load_data(data_dir, cols_a_to_rm=None, cols_b_to_rm=None, order_cols=False, remove_col_names=False, return_tables=False, return_only_col_names=False):
     """
     Load and preprocess data from the specified directory.
     
@@ -236,6 +236,9 @@ def load_data(data_dir, cols_a_to_rm=None, cols_b_to_rm=None, order_cols=False, 
     else:
         table_a = pd.read_csv(os.path.join(data_dir, "1_custom.csv"))
         table_b = pd.read_csv(os.path.join(data_dir, "2_custom.csv"))
+
+    if return_only_col_names:
+        return table_a.columns.values, table_b.columns.values
 
     table_a.rename(columns={'subject_id': 'source_id'}, inplace=True)
     table_b.rename(columns={'subject_id': 'target_id'}, inplace=True)

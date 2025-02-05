@@ -63,6 +63,8 @@ if 'supervised_model' not in st.session_state:
 
 if 'dataset_name' not in st.session_state:
     st.session_state.dataset_name = None
+    st.session_state.cols_a = None
+    st.session_state.cols_b = None
 
 if 'known_pairs' not in st.session_state:
     st.session_state.known_pairs = False
@@ -206,9 +208,15 @@ else:
 st.header("Model")
 st.subheader("Blocking")
 
-st.session_state.known_pairs = any(
-        file.startswith("gs_") for file in os.listdir(os.path.join(DATA_FOLDER, st.session_state.dataset_name))) if st.session_state.dataset_name else False
-
+if st.session_state.dataset_name:
+    st.session_state.known_pairs = any(file.startswith("gs_") for file in os.listdir(os.path.join(DATA_FOLDER, st.session_state.dataset_name)))
+    
+    st.session_state.cols_a, st.session_state.cols_b = load_data(os.path.join(DATA_FOLDER, st.session_state.dataset_name), return_only_col_names=True)
+    
+    # Remove id column
+    st.session_state.cols_a = st.session_state.cols_a[1:]
+    st.session_state.cols_b = st.session_state.cols_b[1:]
+    
 pair_used = st.radio(
     "Select the pairs to use",
     ["Already included pairs", BLOCKED_PAIRS_OPTION] if st.session_state.known_pairs else [BLOCKED_PAIRS_OPTION]
@@ -230,9 +238,15 @@ if pair_used == BLOCKED_PAIRS_OPTION:
     with columns[0]:
         merge_with_tfidf = st.checkbox("Merge with TF-IDF (recommended)", key="merge_with_tfidf_blocking", value=True)
     with columns[1]:
-        remove_col_name = st.checkbox("Remove column name (recommended)", key="remove_col_name_blocking", value=True)
+        remove_col_name = st.checkbox("Remove column name in serialization (recommended)", key="remove_col_name_blocking", value=True)
     with columns[2]:
         order_cols = st.checkbox("Order columns (not recommended)", key="order_cols_blocking")
+        
+    columns = st.columns(2)
+    with columns[0]:
+        cols_a_to_rm = st.multiselect("Select the columns to remove in table A", st.session_state.cols_a, key="cols_a_to_rm_blocking")
+    with columns[1]:
+        cols_b_to_rm = st.multiselect("Select the columns to remove in table B", st.session_state.cols_b, key="cols_b_to_rm_blocking")
 
     n_neighbors = st.number_input("Number of neighbors to retrieve", value=15, min_value=1, max_value=40)
 
@@ -242,7 +256,7 @@ if pair_used == BLOCKED_PAIRS_OPTION:
 
             table_a_serialized, table_b_serialized, X_train_ids, y_train, X_valid_ids, y_valid, X_test_ids, y_test = load_data(
                 os.path.join(DATA_FOLDER, st.session_state.dataset_name), remove_col_names=remove_col_name,
-                order_cols=order_cols)
+                order_cols=order_cols, cols_a_to_rm=cols_a_to_rm, cols_b_to_rm=cols_b_to_rm)
 
             all_true_matches = merge_true_matches(X_train_ids, y_train, X_valid_ids, y_valid, X_test_ids, y_test)
 
@@ -288,9 +302,11 @@ st.subheader("Matching")
 
 columns = st.columns(2)
 with columns[0]:
-    remove_col_name = st.checkbox("Remove column name (recommended)", key="remove_col_name_matching", value=True)
+    remove_col_name = st.checkbox("Remove column name in serialization  (recommended)", key="remove_col_name_matching", value=True)
+    cols_a_to_rm = st.multiselect("Select the columns to remove in table A", st.session_state.cols_a, key="cols_a_to_rm_matching")
 with columns[1]:
     order_cols = st.checkbox("Order columns (recommended)", key="order_cols_matching", value=True)
+    cols_b_to_rm = st.multiselect("Select the columns to remove in table B", st.session_state.cols_b, key="cols_b_to_rm_matching")
 
 if st.session_state.supervised_model:
     model_name = st.selectbox(
@@ -308,7 +324,8 @@ if st.session_state.supervised_model:
 
             train_loader, valid_set, y_valid, test_set, X_test_ids, y_test = prepare_data_cross_encoder(
                 os.path.join(DATA_FOLDER, st.session_state.dataset_name), remove_col_names=remove_col_name,
-                order_cols=order_cols, blocked_pairs=st.session_state.blocked_pairs)
+                order_cols=order_cols, blocked_pairs=st.session_state.blocked_pairs, cols_b_to_rm=cols_b_to_rm,
+                cols_a_to_rm=cols_a_to_rm)
 
             st.write("Data prepared")
 
