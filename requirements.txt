@@ -12,4 +12,3 @@ Levenshtein
 requests
 datasets
 sentence-transformers
-deepmatcher
