@@ -176,7 +176,7 @@ def deserialize_entities(input_string):
     return e1_df, e2_df
 
 
-def load_data(data_dir, cols_a_to_rm=None, cols_b_to_rm=None, order_cols=False, remove_col_names=False, return_tables=False, return_only_col_names=False):
+def load_data(data_dir, cols_a_to_rm=None, cols_b_to_rm=None, order_cols=False, remove_col_names=False, return_tables=False, return_only_col_names=False, verbose=False):
     """
     Load and preprocess data from the specified directory.
     
@@ -263,20 +263,21 @@ def load_data(data_dir, cols_a_to_rm=None, cols_b_to_rm=None, order_cols=False, 
     columns_a = pd.DataFrame({'column_name': table_a.columns, 'data_example': table_a.iloc[0].values})
     columns_b = pd.DataFrame({'column_name': table_b.columns, 'data_example': table_b.iloc[0].values})
 
-    print('Table A columns:')
-    print(columns_a[1:], '\n')
-    print('Table B columns:')
-    print(columns_b[1:], '\n')
+    if verbose:
+        print('Table A columns:')
+        print(columns_a[1:], '\n')
+        print('Table B columns:')
+        print(columns_b[1:], '\n')
 
     if cols_a_to_rm:
         table_a = table_a.drop(columns=cols_a_to_rm, errors='ignore')
-        print('Removed columns from A:', cols_a_to_rm)
+        print('Removed columns from A:', cols_a_to_rm) if verbose else None
     if cols_b_to_rm:
         table_b = table_b.drop(columns=cols_b_to_rm, errors='ignore')
-        print('Removed columns from B:', cols_b_to_rm)
+        print('Removed columns from B:', cols_b_to_rm) if verbose else None
 
     # Check if the columns contains the same values, they could have different length
-    if table_a.columns.values.tolist() != table_b.columns.values.tolist():
+    if verbose and table_a.columns.values.tolist() != table_b.columns.values.tolist():
         print('Columns are not the same in both tables')
         print('Table A columns:', table_a.columns.values)
         print('Table B columns:', table_b.columns.values)
@@ -285,9 +286,10 @@ def load_data(data_dir, cols_a_to_rm=None, cols_b_to_rm=None, order_cols=False, 
 
     if order_cols:
         # Get the max length by values and col name and re order to have the small value cols at the beginning
-        print('Reordering columns')
-        print('Table A columns order before:', table_a.columns.values)
-        print('Table B columns order before:', table_b.columns.values)
+        if verbose:
+            print('Reordering columns')
+            print('Table A columns order before:', table_a.columns.values)
+            print('Table B columns order before:', table_b.columns.values)
         table_a = table_a.reindex(sorted(table_a.columns, key=lambda x: (table_a[x].map(str).apply(len).max(), x)),
                                   axis=1)
         if set(table_a.columns.values) == set(table_b.columns.values):
@@ -295,15 +297,16 @@ def load_data(data_dir, cols_a_to_rm=None, cols_b_to_rm=None, order_cols=False, 
         else:
             table_b = table_b.reindex(sorted(table_b.columns, key=lambda x: (table_b[x].map(str).apply(len).max(), x)),
                                       axis=1)
-        print('Table A columns order after:', table_a.columns.values)
-        print('Table B columns order after:', table_b.columns.values)
+        if verbose:
+            print('Table A columns order after:', table_a.columns.values)
+            print('Table B columns order after:', table_b.columns.values)
 
     table_a_serialized = [serialize_entities(entity, remove_col_names=remove_col_names) for (_, entity) in
                           table_a.iterrows()]
     table_b_serialized = [serialize_entities(entity, remove_col_names=remove_col_names) for (_, entity) in
                           table_b.iterrows()]
-
-    print('Serialized entities', '\n')
+    if verbose:
+        print('Serialized entities', '\n')
 
     X_train, y_train, X_valid, y_valid, X_test, y_test = [], [], [], [], [], []
 

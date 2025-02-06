@@ -542,6 +542,8 @@ if st.session_state.output:
     output_df = pd.DataFrame(st.session_state.output, columns=['Entity A', 'Entity B', 'Score'])
 
     st.session_state.output_df = output_df
+    
+    print(output_df)
 
     # Convert DataFrame to CSV
     csv_data = output_df.to_csv(index=False)

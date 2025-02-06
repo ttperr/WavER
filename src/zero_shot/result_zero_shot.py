@@ -74,6 +74,11 @@ if __name__ == '__main__':
                         f'Dataset: {dataset}, Model: {model_name}, Order columns: {order_cols}, Remove column names: {remove_col_names}')
                     data_name = dataset
                     data_dir = os.path.join('data', data_name)
+                    
+                    # If results already exist, skip
+                    if os.path.exists(
+                            f'results/{data_name}-zshot/{model_name}-order_cols_{order_cols}-remove_col_names_{remove_col_names}/logits.csv'):
+                        continue
 
                     table_a_serialized, table_b_serialized, X_train_ids, y_train, X_valid_ids, y_valid, X_test_ids, y_test = load_data(
                         data_dir, order_cols=order_cols, remove_col_names=remove_col_names)
