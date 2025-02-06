@@ -193,15 +193,20 @@ st.header("Model")
 st.subheader("Blocking")
 
 if st.session_state.dataset_name:
-    st.session_state.known_pairs = any(
-        file.startswith("gs_") for file in os.listdir(os.path.join(DATA_FOLDER, st.session_state.dataset_name)))
+    
+    try:
+        st.session_state.known_pairs = any(
+            file.startswith("gs_") for file in os.listdir(os.path.join(DATA_FOLDER, st.session_state.dataset_name)))
 
-    st.session_state.cols_a, st.session_state.cols_b = load_data(
-        os.path.join(DATA_FOLDER, st.session_state.dataset_name), return_only_col_names=True)
+        st.session_state.cols_a, st.session_state.cols_b = load_data(
+            os.path.join(DATA_FOLDER, st.session_state.dataset_name), return_only_col_names=True)
 
-    # Remove id column
-    st.session_state.cols_a = st.session_state.cols_a[1:]
-    st.session_state.cols_b = st.session_state.cols_b[1:]
+        # Remove id column
+        st.session_state.cols_a = st.session_state.cols_a[1:]
+        st.session_state.cols_b = st.session_state.cols_b[1:]
+    except FileNotFoundError:
+        st.warning("Please upload a dataset first")
+        st.stop()
 
 pair_used = st.radio(
     "Select the pairs to use",

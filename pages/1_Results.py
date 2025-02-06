@@ -98,7 +98,9 @@ if uploaded_file is not None and not st.session_state.results_loaded:
         }
         st.success("Dataset loaded successfully.")
 
-if (st.session_state.output_df is not None and not st.session_state.results_loaded) or st.button("Load last result"):
+load_last_result = st.button("Load last result")
+
+if load_last_result or (st.session_state.output_df is not None and not st.session_state.results_loaded):
     dataset_name = st.session_state.dataset_name
     df = st.session_state.output_df
 
