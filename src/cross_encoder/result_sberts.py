@@ -20,6 +20,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from model.utils import load_data
+from model.CrossEncoderModel import prepare_data_cross_encoder, fit_cross_encoder
 
 ## Constants
 
@@ -83,48 +84,14 @@ if __name__ == '__main__':
                             f'results/{data_name}-{model_name}-order_cols_{order_cols}-remove_col_names_{remove_col_names}/logits.csv'):
                         continue
 
-                    table_a_serialized, table_b_serialized, X_train_ids, y_train, X_valid_ids, y_valid, X_test_ids, y_test = load_data(
-                        data_dir, order_cols=order_cols, remove_col_names=remove_col_names)
+                    # Prepare data
+                    train_loader, valid_set, y_valid, test_examples, X_test_ids, y_test = prepare_data_cross_encoder(
+                        data_dir, remove_col_names=remove_col_names, order_cols=order_cols)
 
-                    X1_train, X2_train = [table_a_serialized[i[0]] for i in X_train_ids], [table_b_serialized[i[1]] for
-                                                                                           i in X_train_ids]
-                    X1_valid, X2_valid = [table_a_serialized[i[0]] for i in X_valid_ids], [table_b_serialized[i[1]] for
-                                                                                           i in X_valid_ids]
-                    X1_test, X2_test = [table_a_serialized[i[0]] for i in X_test_ids], [table_b_serialized[i[1]] for i
-                                                                                        in X_test_ids]
-
-                    train_datasets = [InputExample(texts=[X1_train[i], X2_train[i]], label=y_train[i]) for i in
-                                      range(len(X_train_ids))]
-                    valid_datasets = [InputExample(texts=[X1_valid[i], X2_valid[i]], label=y_valid[i]) for i in
-                                      range(len(X_valid_ids))]
-                    test_datasets = [InputExample(texts=[X1_test[i], X2_test[i]], label=y_test[i]) for i in
-                                     range(len(X_test_ids))]
-                    train_loader = DataLoader(train_datasets, shuffle=True, batch_size=16, num_workers=0)
-                    valid_loader = DataLoader(valid_datasets, shuffle=False, batch_size=16, num_workers=0)
-                    test_examples = DataLoader(test_datasets, shuffle=False, batch_size=16, num_workers=0)
-
-                    valid_evaluation_set = [(e1, e2) for e1, e2 in zip(X1_valid, X2_valid)]
-
-                    loss_fct = BCEWithLogitsLoss()
-
-                    model = CrossEncoder(model_name, num_labels=1, device=device, classifier_dropout=CLASSIFIER_DROPOUT,
-                                         default_activation_function=nn.Sigmoid())
-
-                    start_time = time.time()
-                    model.fit(train_dataloader=train_loader,
-                              loss_fct=loss_fct,
-                              evaluator=CEBinaryClassificationEvaluator(valid_evaluation_set, labels=y_valid,
-                                                                        show_progress_bar=False),
-                              epochs=EPOCHS,
-                              warmup_steps=WARMUP_STEPS,
-                              optimizer_params={'lr': LR},
-                              weight_decay=WEIGHT_DECAY,
-                              show_progress_bar=False)
-                    training_time = time.time() - start_time
-
-                    print(f'Training time: {training_time}')
-
-                    logits = model.predict([[e1, e2] for e1, e2 in zip(X1_test, X2_test)], apply_softmax=True)
+                    logits, training_time = fit_cross_encoder(model_name, train_loader, valid_set, y_valid,
+                                                                test_examples, epochs=EPOCHS, learning_rate=LR,
+                                                                weight_decay=WEIGHT_DECAY, warmup_steps=WARMUP_STEPS,
+                                                                classifier_dropout=CLASSIFIER_DROPOUT)
 
                     # Save train time and logits to file
                     with open(

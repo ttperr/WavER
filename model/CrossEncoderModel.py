@@ -15,7 +15,7 @@ from model.utils import load_data
 import numpy as np
 
 def prepare_data_cross_encoder(data_dir, remove_col_names=True, order_cols=True, blocked_pairs=None, cols_a_to_rm=None,
-                                 cols_b_to_rm=None):
+                                 cols_b_to_rm=None, true_samples_size=5, false_samples_size=5):
     table_a_serialized, table_b_serialized, X_train_ids, y_train, X_valid_ids, y_valid, X_test_ids, y_test = load_data(
         data_dir, remove_col_names=remove_col_names, order_cols=order_cols, cols_a_to_rm=cols_a_to_rm,
         cols_b_to_rm=cols_b_to_rm)
@@ -47,22 +47,19 @@ def prepare_data_cross_encoder(data_dir, remove_col_names=True, order_cols=True,
                                                                            X_valid_ids]
     X1_test, X2_test = [table_a_serialized[i[0]] for i in X_test_ids], [table_b_serialized[i[1]] for i in X_test_ids]
     
-    # TODO: Remove this
-    TRUE_SAMPLES_SIZE = 2
-    FALSE_SAMPLES_SIZE = 2
-    
-    np.random.seed(0)
-    y_train = np.array(y_train)
-    true_samples = np.random.choice(np.nonzero(y_train)[0], TRUE_SAMPLES_SIZE)
-    false_samples = np.random.choice(np.nonzero(1-y_train)[0], FALSE_SAMPLES_SIZE)
-    
-    X1_train_sample = [X1_train[i] for i in true_samples] + [X1_train[i] for i in false_samples]
-    X2_train_sample = [X2_train[i] for i in true_samples] + [X2_train[i] for i in false_samples]
-    y_train_sample = [1]*TRUE_SAMPLES_SIZE + [0]*FALSE_SAMPLES_SIZE
-    # REORDER
-    train_datasets = [InputExample(texts=[X1_train_sample[i], X2_train_sample[i]], label=y_train_sample[i]) for i in range(len(X1_train_sample))]
+    if true_samples_size:
+        y_train = np.array(y_train)
+        true_samples = np.random.choice(np.nonzero(y_train)[0], true_samples_size)
+        false_samples = np.random.choice(np.nonzero(1-y_train)[0], false_samples_size)
+        
+        X1_train_sample = [X1_train[i] for i in true_samples] + [X1_train[i] for i in false_samples]
+        X2_train_sample = [X2_train[i] for i in true_samples] + [X2_train[i] for i in false_samples]
+        y_train_sample = [1]*true_samples_size + [0]*false_samples_size
 
-    # train_datasets = [InputExample(texts=[X1_train[i], X2_train[i]], label=y_train[i]) for i in range(len(X_train_ids))]
+        train_datasets = [InputExample(texts=[X1_train_sample[i], X2_train_sample[i]], label=y_train_sample[i]) for i in range(len(X1_train_sample))]
+    else:
+        train_datasets = [InputExample(texts=[X1_train[i], X2_train[i]], label=y_train[i]) for i in range(len(X_train_ids))]
+    
     train_loader = DataLoader(train_datasets, shuffle=True, batch_size=16, num_workers=0)
 
     test_set = [(e1, e2) for e1, e2 in zip(X1_test, X2_test)]
