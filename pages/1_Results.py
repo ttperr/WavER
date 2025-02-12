@@ -100,6 +100,9 @@ if uploaded_file is not None and not st.session_state.results_loaded:
 
 load_last_result = st.button("Load last result")
 
+print(st.session_state.output_df)
+print(st.session_state.results_loaded)
+
 if load_last_result or (st.session_state.output_df is not None and not st.session_state.results_loaded):
     dataset_name = st.session_state.dataset_name
     df = st.session_state.output_df
