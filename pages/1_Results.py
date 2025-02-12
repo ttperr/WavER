@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 import src.import_data as import_data
+import src.session_state as session_state
 from model.utils import load_data
 
 ######## Constants ########
@@ -37,15 +38,14 @@ def prepare_dataframe(data):
 
 ######## Page ########
 
+session_state.initialize_session_state()
+
 # Initialize session state variables
 if "results_loaded" not in st.session_state:
     st.session_state.results_loaded = False
     st.session_state.data = {}
     st.session_state.dataset_name = None
     st.session_state.uploaded_file_name = None
-
-if 'dataset_name' not in st.session_state:
-    st.session_state.dataset_name = None
 
 st.set_page_config(page_title="Results", page_icon="📈", layout="wide")
 

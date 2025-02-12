@@ -10,6 +10,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from torch.utils.data import DataLoader
 
 import src.import_data as import_data
+import src.session_state as session_state
 from model.Blocking import (get_blocking_metrics, merge_indices,
                             merge_true_matches, perform_blocking_sbert,
                             perform_blocking_tfidf)
@@ -43,40 +44,25 @@ CUSTOM_DATASET_NAME = "custom_dataset"
 def reset_training_pairs():
     st.session_state.training_pairs_few_shot = None
 
+session_state.initialize_session_state()
 
 if 'supervised_model' not in st.session_state:
     st.session_state.supervised_model = True
 
-if 'dataset_name' not in st.session_state:
-    st.session_state.dataset_name = None
-    st.session_state.cols_a = None
-    st.session_state.cols_b = None
+if 'testing_mode' not in st.session_state:
+    st.session_state.testing_mode = False
 
 if 'known_pairs' not in st.session_state:
     st.session_state.known_pairs = False
 
-if 'testing_mode' not in st.session_state:
-    st.session_state.testing_mode = False
+if 'training_pairs_few_shot' not in st.session_state:
+    st.session_state.training_pairs_few_shot = None
 
 if 'blocked_pairs' not in st.session_state:
     st.session_state.blocked_pairs = None
 
-if 'training_pairs_few_shot' not in st.session_state:
-    st.session_state.training_pairs_few_shot = None
-
 if 'matching_pairs' not in st.session_state:
     st.session_state.matching_pairs = []
-
-if 'output' not in st.session_state:
-    st.session_state.output = None
-    st.session_state.output_df = None
-
-if "blocking_metrics" not in st.session_state:
-    st.session_state.blocking_metrics = {
-        "reduction_ratio": None,
-        "recall": None,
-        "f1": None
-    }
 
 ######## Streamlit app ########
 
