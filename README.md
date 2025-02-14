@@ -74,11 +74,10 @@ streamlit run Matching.py
 If you find this work useful, please consider citing:
 
 ```bibtex
-@article{yourarticle,
+@article{article,
     title = {WavER: A Unified Pipeline for Scalable Entity Resolution},
-    author = {Your Name},
-    journal = {Journal of Data Science},
-    year = {2022}
+    author = {PERROT T.},
+    year = {2025}
 }
 ```
 
