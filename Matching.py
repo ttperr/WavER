@@ -23,10 +23,6 @@ from model.utils import load_data, save_tables
 
 DATA_FOLDER = import_data.DATA_FOLDER
 RESULTS_FOLDER = "results"
-EPOCHS = 1
-LEARNING_RATE = 2e-5
-WEIGHT_DECAY = 0.01
-THRESHOLD = 0.7
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 NOT_SPLIT_OPTION = "Not split matches"
@@ -301,6 +297,15 @@ if st.session_state.supervised_model:
         ],
         index=1
     )
+    
+    columns = st.columns(3)
+    with columns[0]:
+        EPOCHS = st.number_input("Number of epochs", value=1, min_value=1, max_value=10)
+    with columns[1]:
+        LEARNING_RATE = st.number_input("Learning rate", value=2e-5, min_value=1e-6, max_value=1e-2, format="%.6f")
+    with columns[2]:
+        WEIGHT_DECAY = st.number_input("Weight decay", value=0.01, min_value=0.0, max_value=1.0)
+    
     if st.button("Run matching"):
         with st.status("Matching in progress...", expanded=True):
             st.write("Matching started")
@@ -343,6 +348,13 @@ else:
     )
 
     if few_shot_method:
+
+        columns = st.columns(2)
+        with columns[0]:
+            num_epochs_few_shot = st.number_input("Number of epochs for few-shot learning", value=5, min_value=1, max_value=10)
+        with columns[1]:
+            THRESHOLD = st.number_input("Threshold for matching", value=0.7, min_value=0.0, max_value=1.0, format="%.2f")
+
         upload_training_pairs = st.selectbox(
             "Select the training pairs",
             ["Upload training pairs", "Create here"],
@@ -490,8 +502,7 @@ else:
                 train_loss = losses.CosineSimilarityLoss(model=model)
 
                 # Training parameters
-                num_epochs = 5
-                warmup_steps = int(len(train_dataloader) * num_epochs * 0.1)  # 10% of training steps for warm-up
+                warmup_steps = int(len(train_dataloader) * num_epochs_few_shot * 0.1)  # 10% of training steps for warm-up
 
                 # Define a directory to save the model
                 model_save_path = "output/trained_sentence_transformer_model"
@@ -499,7 +510,7 @@ else:
                 # Train the model
                 model.fit(
                     train_objectives=[(train_dataloader, train_loss)],
-                    epochs=num_epochs,
+                    epochs=num_epochs_few_shot,
                     warmup_steps=warmup_steps,
                     output_path=model_save_path
                 )
