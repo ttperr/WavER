@@ -1,0 +1,87 @@
+# WavER: A Unified Pipeline for Scalable Entity Resolution
+
+**Advancing Entity Resolution with Supervised, Unsupervised, Graph-Based, and Large Language Model Approaches**
+
+## 📌 Overview
+
+WavER (Wavestone Entity Resolution) is a comprehensive entity resolution pipeline designed to improve accuracy and
+scalability across diverse datasets. It integrates various blocking techniques, supervised and unsupervised matching
+models, and explores recent advances in zero-shot and few-shot learning using Large Language Models (LLMs).
+
+This project builds on benchmark results in entity resolution, comparing against state-of-the-art methods from _Papers
+with Code_ and other industry benchmarks.
+
+## 🚀 Features
+
+- **Blocking Techniques**: Scalable candidate pair reduction to improve efficiency with graph-based and rule-based
+  strategies.
+- **Pairwise Matching Models**: Supervised and unsupervised approaches for entity matching.
+- **LLM-Based Matching**: Zero-shot and few-shot learning approaches for adaptable resolution.
+- **Benchmark Comparisons**: Evaluation against existing entity resolution models.
+
+## 📂 Repository Structure
+
+```bash
+WavER/
+│── data/ # Datasets and preprocessed data
+│── graphs/ # Graphs representations for entity resolution
+│── model/ # Trained models and evaluation scripts
+│── pages/ # StreamLit application pages
+│── papers/ # Related research papers and benchmarks
+│── results/ # Benchmark comparisons and results
+│── src/ # Core pipeline implementation
+│ │── bert/ # Pairwise entity matching models
+│ │── blocking/ # Blocking strategies
+│ │── cross-encoder/ # Graph-based entity resolution
+│ │── zero-shot/ # Zero-shot and few-shot entity matching
+│── README.md # Project documentation
+│── requirements.txt # Dependencies
+│── Matching.py # StreamLit application entry point
+```
+
+## 📊 Results
+
+The pipeline has been tested on multiple datasets, demonstrating improvements in both accuracy and efficiency. Key findings include:
+
+- **Reduction in candidate pairs via efficient blocking**
+- **Supervised models outperform traditional baselines**
+- **Graph-based methods enhance clustering performance**
+- **LLM-based zero-shot matching provides robust generalization** in unseen datasets.
+
+![Amazon-Google F1 Score](./images/ag_f1.png)
+
+For detailed results, see the [Results Section](./results/) or refer to the [Master's Thesis](#).
+
+## 🔧 Installation
+
+To set up the environment:
+
+```bash
+git clone https://github.com/ttperr/WavER.git
+cd WavER
+pip install -r requirements.txt
+```
+
+## ▶️ Usage
+
+Run the POC using:
+
+```bash
+streamlit run Matching.py
+```
+
+## 📖 Citation
+
+If you find this work useful, please consider citing:
+
+```bibtex
+@article{article,
+    title = {WavER: A Unified Pipeline for Scalable Entity Resolution},
+    author = {PERROT T.},
+    year = {2025}
+}
+```
+
+## 📫 Contact
+
+For questions or feedback, please reach out to me.
