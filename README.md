@@ -41,13 +41,14 @@ WavER/
 
 ## 📊 Results
 
-The pipeline has been tested on multiple datasets, demonstrating improvements in both accuracy and efficiency. Key
-findings include:
+The pipeline has been tested on multiple datasets, demonstrating improvements in both accuracy and efficiency. Key findings include:
 
-- **Reduction in candidate pairs via efficient blocking** (X% improvement in speed).
-- **Supervised models outperform traditional baselines** (Y% higher F1-score).
-- **Graph-based methods enhance clustering performance** (Z% better precision-recall tradeoff).
+- **Reduction in candidate pairs via efficient blocking**
+- **Supervised models outperform traditional baselines**
+- **Graph-based methods enhance clustering performance**
 - **LLM-based zero-shot matching provides robust generalization** in unseen datasets.
+
+![Amazon-Google F1 Score](./images/ag_f1.png)
 
 For detailed results, see the [Results Section](./results/) or refer to the [Master's Thesis](#).
 
