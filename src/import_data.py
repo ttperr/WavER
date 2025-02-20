@@ -5,7 +5,6 @@ import zipfile
 
 ### Config
 DATA_FOLDER = 'data' + os.sep
-### End Config
 
 URL_PREFIX = 'https://data.dws.informatik.uni-mannheim.de/benchmarkmatchingtasks/data/'
 DATASET_SUFFIX = {
@@ -17,6 +16,7 @@ DATASET_SUFFIX = {
     'wdc_xlarge_computers': 'wdc_xlarge_computers',
 }
 ZIP_FILENAME = 'records.zip'
+### End Config
 
 
 def download_dataset(dataset):
@@ -34,12 +34,12 @@ def download_dataset(dataset):
         os.makedirs(DATA_FOLDER + dataset)
 
         for split in ['train', 'val', 'test']:
-            url = URL_PREFIX + dataset_url + "/" + 'gs_' + split + '.csv'
+            url = URL_PREFIX + dataset_url + '/' + 'gs_' + split + '.csv'
             r = requests.get(url, params={'downloadformat': 'csv'})
             with open(DATA_FOLDER + dataset + os.sep + 'gs_' + split + '.csv', 'wb') as f:
                 f.write(r.content)
 
-        url = URL_PREFIX + dataset_url + "/" + ZIP_FILENAME
+        url = URL_PREFIX + dataset_url + '/' + ZIP_FILENAME
         r = requests.get(url, params={'downloadformat': 'zip'})
         print(url)
         with open(DATA_FOLDER + dataset + os.sep + ZIP_FILENAME, 'wb') as f:
