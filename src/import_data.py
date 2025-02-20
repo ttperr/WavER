@@ -5,7 +5,6 @@ import zipfile
 
 ### Config
 DATA_FOLDER = 'data' + os.sep
-### End Config
 
 URL_PREFIX = 'https://data.dws.informatik.uni-mannheim.de/benchmarkmatchingtasks/data/'
 DATASET_SUFFIX = {
@@ -17,6 +16,7 @@ DATASET_SUFFIX = {
     'wdc_xlarge_computers': 'wdc_xlarge_computers',
 }
 ZIP_FILENAME = 'records.zip'
+### End Config
 
 
 def download_dataset(dataset):
