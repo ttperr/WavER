@@ -48,7 +48,7 @@ The pipeline has been tested on multiple datasets, demonstrating improvements in
 - **Graph-based methods enhance clustering performance**
 - **LLM-based zero-shot matching provides robust generalization** in unseen datasets.
 
-![Amazon-Google F1 Score](./images/ag_f1.png)
+![Amazon-Google F1 Score](./images/crossencoder_vs_bert.png)
 
 For detailed results, see the [Results Section](./results/) or refer to the [Master's Thesis](#).
 
