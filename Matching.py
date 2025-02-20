@@ -347,13 +347,14 @@ else:
         index=1
     )
 
+    columns = st.columns(2)
+    with columns[0]:
+        THRESHOLD = st.number_input("Threshold for matching", value=0.7, min_value=0.0, max_value=1.0, format="%.2f")
+
     if few_shot_method:
 
-        columns = st.columns(2)
-        with columns[0]:
-            num_epochs_few_shot = st.number_input("Number of epochs for few-shot learning", value=5, min_value=1, max_value=10)
         with columns[1]:
-            THRESHOLD = st.number_input("Threshold for matching", value=0.7, min_value=0.0, max_value=1.0, format="%.2f")
+            num_epochs_few_shot = st.number_input("Number of epochs for few-shot learning", value=5, min_value=1, max_value=10)
 
         upload_training_pairs = st.selectbox(
             "Select the training pairs",
