@@ -6,6 +6,7 @@ import torch
 from sentence_transformers import (InputExample,
                                    SentenceTransformer,
                                    losses)
+from sentence_transformers.util import pairwise_cos_sim
 from sklearn.metrics.pairwise import cosine_similarity
 from torch.utils.data import DataLoader
 
@@ -523,15 +524,15 @@ else:
 
             st.write("Embeddings done")
 
-            similarity_matrix_test = cosine_similarity(embeddings1_test, embeddings2_test)
+            similarity_test = pairwise_cos_sim(embeddings1_test, embeddings2_test)
 
-            st.write("Similarity matrix done")
+            st.write("Similarity done")
 
-            if similarity_matrix_test is not None:
-                accuracy, precision, recall, f1, roc_auc = evaluate_zero_shot(similarity_matrix_test, y_test,
+            if similarity_test is not None:
+                accuracy, precision, recall, f1, roc_auc = evaluate_zero_shot(similarity_test, y_test,
                                                                               threshold=THRESHOLD)
 
-                output = [(X_test_ids[i][0], X_test_ids[i][1], similarity_matrix_test[i, i]) for i in
+                output = [(X_test_ids[i][0], X_test_ids[i][1], similarity_test[i]) for i in
                           range(len(X_test_ids))]
                 st.session_state.output = output
             st.write("Matching done")

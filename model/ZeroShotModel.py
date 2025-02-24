@@ -21,7 +21,7 @@ def evaluate_zero_shot(similarity_matrix_test, y_test=None, threshold=0.65):
         y_pred = np.zeros_like(y_test)
 
         for i in range(len(y_test)):
-            if similarity_matrix_test[i, i] > threshold:
+            if similarity_matrix_test[i] > threshold:
                 y_pred[i] = 1
 
         accuracy = accuracy_score(y_test, y_pred)
