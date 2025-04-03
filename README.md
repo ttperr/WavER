@@ -1,6 +1,6 @@
 # WavER: A Unified Pipeline for Scalable Entity Resolution
 
-**Advancing Entity Resolution with Supervised, Unsupervised, Graph-Based, and Large Language Model Approaches**
+**Advancing Entity Resolution: Creating a Unified Pipeline for Scalable Blocking and Accurate Matching**
 
 ## 📌 Overview
 
