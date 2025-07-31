@@ -2,6 +2,8 @@
 
 **Advancing Entity Resolution: Creating a Unified Pipeline for Scalable Blocking and Accurate Matching**
 
+Link to the paper: [KTH DIVA](https://urn.kb.se/resolve?urn=urn:nbn:se:kth:diva-367531)
+
 ## 📌 Overview
 
 WavER (Wavestone Entity Resolution) is a comprehensive entity resolution pipeline designed to improve accuracy and
