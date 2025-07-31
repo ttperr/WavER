@@ -70,15 +70,19 @@ Run the POC using:
 streamlit run Matching.py
 ```
 
-## 📖 Citation (WIP)
+## 📖 Citation
 
 If you find this work useful, please consider citing:
 
 ```bibtex
-@article{article,
-    title = {WavER: A Unified Pipeline for Scalable Entity Resolution},
-    author = {PERROT T.},
-    year = {2025}
+@phdthesis{Perrot_2025,
+	title        = {Advancing Entity Resolution: Creating a Unified Pipeline for Scalable Blocking and Accurate Matching : A Study of Supervised and Unsupervised Methods, Graph-Based Approaches and Transformers},
+	author       = {Perrot, Tristan},
+	year         = 2025,
+	series       = {TRITA-EECS-EX},
+	url          = {https://urn.kb.se/resolve?urn=urn:nbn:se:kth:diva-367531},
+	abstractnote = {Entity Resolution (ER), the task of identifying and linking records that refer to the same real-world entity, is a cornerstone of data integration and analytics. However, achieving both scalability and accuracy in ER pipelines remains a persistent challenge, as traditional methods struggle with large datasets, noisy data, and computational complexity. This problem is significant due to its critical role in domains such as e-commerce, healthcare, and scientific research, where data consolidation and consistency are vital. Despite the wealth of existing research, the complexity of balancing high performance in both blocking and matching stages has left significant room for improvement, making it a suitable and impactful topic for a master's thesis. To address this, I conducted a comprehensive study of ER techniques, focusing on both blocking and matching. I explored graph-based approaches for blocking to improve scalability and reduce computational overhead. For the matching phase, I leveraged supervised learning using a cross-encoder architecture based on the Sentence bidirectional encoder representations from transformers (SBERT) framework, achieving state-of-the-art results. Additionally, I investigated unsupervised graph-based methods with SBERT embeddings and the potential of Large Language Models (LLMs) for zero-shot inference. By integrating these techniques, I developed a robust and scalable pipeline capable of handling diverse datasets and scenarios. The results demonstrate that supervised matching with cross-encoders significantly outperforms other approaches (even the state-of-art ones) in accuracy, while graph-based and unsupervised methods provide valuable scalability and adaptability insights. This thesis not only benchmarks the performance of these methods against state-of-the-art approaches but also offers a unified perspective on current techniques while providing a POC. The findings enable researchers and practitioners to design more effective pipelines, bridging the gap between scalability and precision, and paving the way for future innovations in the field.},
+	collection   = {TRITA-EECS-EX},
 }
 ```
 
