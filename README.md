@@ -52,7 +52,7 @@ The pipeline has been tested on multiple datasets, demonstrating improvements in
 
 ![Amazon-Google F1 Score](./images/crossencoder_vs_bert.png)
 
-For detailed results, see the [Results Section](./results/) or refer to the [Master's Thesis](#).
+For detailed results, see the [Results Section](./results/) or refer to the [Master's Thesis](https://urn.kb.se/resolve?urn=urn:nbn:se:kth:diva-367531).
 
 ## 🔧 Installation
 
